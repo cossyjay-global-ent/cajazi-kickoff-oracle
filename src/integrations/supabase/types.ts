@@ -214,6 +214,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_favorites: {
+        Row: {
+          bundle_id: string | null
+          favorited_at: string
+          id: string
+          prediction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          bundle_id?: string | null
+          favorited_at?: string
+          id?: string
+          prediction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          bundle_id?: string | null
+          favorited_at?: string
+          id?: string
+          prediction_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_prediction_views: {
+        Row: {
+          bundle_id: string | null
+          id: string
+          prediction_id: string
+          user_id: string
+          viewed_at: string
+        }
+        Insert: {
+          bundle_id?: string | null
+          id?: string
+          prediction_id: string
+          user_id: string
+          viewed_at?: string
+        }
+        Update: {
+          bundle_id?: string | null
+          id?: string
+          prediction_id?: string
+          user_id?: string
+          viewed_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
