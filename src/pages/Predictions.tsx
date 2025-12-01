@@ -7,14 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CalendarIcon, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function Predictions() {
   const [bundles, setBundles] = useState<any[]>([]);
+  const [filteredBundles, setFilteredBundles] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [minOdds, setMinOdds] = useState<string>("");
+  const [maxOdds, setMaxOdds] = useState<string>("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -28,6 +33,10 @@ export default function Predictions() {
       fetchBundles();
     }
   }, [selectedDate, isAuthenticated]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [bundles, statusFilter, minOdds, maxOdds]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -63,6 +72,33 @@ export default function Predictions() {
     }
   };
 
+  const applyFilters = () => {
+    let filtered = [...bundles];
+
+    // Status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(bundle => bundle.final_status === statusFilter);
+    }
+
+    // Odds range filter
+    if (minOdds !== "") {
+      const min = parseFloat(minOdds);
+      filtered = filtered.filter(bundle => parseFloat(bundle.total_odds) >= min);
+    }
+    if (maxOdds !== "") {
+      const max = parseFloat(maxOdds);
+      filtered = filtered.filter(bundle => parseFloat(bundle.total_odds) <= max);
+    }
+
+    setFilteredBundles(filtered);
+  };
+
+  const resetFilters = () => {
+    setStatusFilter("all");
+    setMinOdds("");
+    setMaxOdds("");
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -81,44 +117,110 @@ export default function Predictions() {
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-            <div>
-              <h2 className="text-4xl font-bold text-foreground mb-2">Free Predictions</h2>
-              <p className="text-muted-foreground">Daily expert football betting tips</p>
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-4xl font-bold text-foreground mb-2">Free Predictions</h2>
+                <p className="text-muted-foreground">Daily expert football betting tips</p>
+              </div>
+            
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full sm:w-[240px] justify-start text-left font-normal shadow-sm",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-card" align="end">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => date && setSelectedDate(date)}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
-          
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full sm:w-[240px] justify-start text-left font-normal shadow-sm",
-                    !selectedDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-card" align="end">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
+
+            {/* Filter Bar */}
+            <div className="bg-card/80 backdrop-blur border border-border rounded-xl p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Filter className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold text-foreground">Filters</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="status-filter" className="text-sm text-muted-foreground mb-2 block">Status</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger id="status-filter" className="bg-background">
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="won">Won</SelectItem>
+                      <SelectItem value="lost">Lost</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="min-odds" className="text-sm text-muted-foreground mb-2 block">Min Odds</Label>
+                  <Input
+                    id="min-odds"
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g., 1.50"
+                    value={minOdds}
+                    onChange={(e) => setMinOdds(e.target.value)}
+                    className="bg-background"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="max-odds" className="text-sm text-muted-foreground mb-2 block">Max Odds</Label>
+                  <Input
+                    id="max-odds"
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g., 10.00"
+                    value={maxOdds}
+                    onChange={(e) => setMaxOdds(e.target.value)}
+                    className="bg-background"
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <Button 
+                    variant="outline" 
+                    onClick={resetFilters}
+                    className="w-full"
+                  >
+                    Reset Filters
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-6">
-            {bundles.length === 0 ? (
+            {filteredBundles.length === 0 ? (
               <div className="text-center py-16 bg-card/50 backdrop-blur border border-border rounded-xl shadow-lg">
-                <p className="text-muted-foreground text-lg">No prediction packages available for this date.</p>
+                <p className="text-muted-foreground text-lg">
+                  {bundles.length === 0 
+                    ? "No prediction packages available for this date." 
+                    : "No predictions match your filters. Try adjusting the filter criteria."}
+                </p>
               </div>
             ) : (
-              bundles.map((bundle) => (
+              filteredBundles.map((bundle) => (
                 <div
                   key={bundle.id}
                   className="p-8 bg-card/80 backdrop-blur border border-border rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
