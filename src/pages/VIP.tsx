@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Star, CalendarIcon, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Star, CalendarIcon, Loader2, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -13,8 +16,12 @@ import { User } from "@supabase/supabase-js";
 export default function VIP() {
   const [hasSubscription, setHasSubscription] = useState(false);
   const [bundles, setBundles] = useState<any[]>([]);
+  const [filteredBundles, setFilteredBundles] = useState<any[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [minOdds, setMinOdds] = useState<string>("");
+  const [maxOdds, setMaxOdds] = useState<string>("");
   const [loadingBundles, setLoadingBundles] = useState(false);
   const [currentView, setCurrentView] = useState<"plans" | "predictions">("plans");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -61,6 +68,10 @@ export default function VIP() {
       fetchVIPBundles();
     }
   }, [hasSubscription, selectedDate, currentView]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [bundles, statusFilter, minOdds, maxOdds]);
 
   const checkSubscription = async () => {
     if (!user) return;
@@ -136,6 +147,33 @@ export default function VIP() {
     } finally {
       setLoadingBundles(false);
     }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...bundles];
+
+    // Status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(bundle => bundle.final_status === statusFilter);
+    }
+
+    // Odds range filter
+    if (minOdds !== "") {
+      const min = parseFloat(minOdds);
+      filtered = filtered.filter(bundle => parseFloat(bundle.total_odds) >= min);
+    }
+    if (maxOdds !== "") {
+      const max = parseFloat(maxOdds);
+      filtered = filtered.filter(bundle => parseFloat(bundle.total_odds) <= max);
+    }
+
+    setFilteredBundles(filtered);
+  };
+
+  const resetFilters = () => {
+    setStatusFilter("all");
+    setMinOdds("");
+    setMaxOdds("");
   };
 
 
@@ -263,18 +301,85 @@ export default function VIP() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
-            {loadingBundles ? (
-              <div className="text-center py-16 bg-card/50 backdrop-blur border border-border rounded-xl shadow-lg">
-                <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
-                <p className="text-muted-foreground text-lg">Loading predictions...</p>
+          <>
+            {/* Filter Bar */}
+            {hasSubscription && currentView === "predictions" && (
+              <div className="bg-card/80 backdrop-blur border border-border rounded-xl p-4 shadow-sm mb-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Filter className="h-4 w-4 text-primary" />
+                  <h3 className="font-semibold text-foreground">Filters</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <Label htmlFor="vip-status-filter" className="text-sm text-muted-foreground mb-2 block">Status</Label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger id="vip-status-filter" className="bg-background">
+                        <SelectValue placeholder="All statuses" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="won">Won</SelectItem>
+                        <SelectItem value="lost">Lost</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="vip-min-odds" className="text-sm text-muted-foreground mb-2 block">Min Odds</Label>
+                    <Input
+                      id="vip-min-odds"
+                      type="number"
+                      step="0.01"
+                      placeholder="e.g., 1.50"
+                      value={minOdds}
+                      onChange={(e) => setMinOdds(e.target.value)}
+                      className="bg-background"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="vip-max-odds" className="text-sm text-muted-foreground mb-2 block">Max Odds</Label>
+                    <Input
+                      id="vip-max-odds"
+                      type="number"
+                      step="0.01"
+                      placeholder="e.g., 10.00"
+                      value={maxOdds}
+                      onChange={(e) => setMaxOdds(e.target.value)}
+                      className="bg-background"
+                    />
+                  </div>
+
+                  <div className="flex items-end">
+                    <Button 
+                      variant="outline" 
+                      onClick={resetFilters}
+                      className="w-full"
+                    >
+                      Reset Filters
+                    </Button>
+                  </div>
+                </div>
               </div>
-            ) : bundles.length === 0 ? (
-              <div className="text-center py-16 bg-card/50 backdrop-blur border border-border rounded-xl shadow-lg">
-                <p className="text-muted-foreground text-lg">No VIP prediction packages available for this date.</p>
-              </div>
-            ) : (
-              bundles.map((bundle) => (
+            )}
+
+            <div className="space-y-6">
+              {loadingBundles ? (
+                <div className="text-center py-16 bg-card/50 backdrop-blur border border-border rounded-xl shadow-lg">
+                  <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
+                  <p className="text-muted-foreground text-lg">Loading predictions...</p>
+                </div>
+              ) : filteredBundles.length === 0 ? (
+                <div className="text-center py-16 bg-card/50 backdrop-blur border border-border rounded-xl shadow-lg">
+                  <p className="text-muted-foreground text-lg">
+                    {bundles.length === 0 
+                      ? "No VIP prediction packages available for this date." 
+                      : "No predictions match your filters. Try adjusting the filter criteria."}
+                  </p>
+                </div>
+              ) : (
+                filteredBundles.map((bundle) => (
                 <div
                   key={bundle.id}
                   className="p-8 bg-card/80 backdrop-blur border border-border rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
@@ -376,12 +481,13 @@ export default function VIP() {
                     </div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+                ))
+              )}
+            </div>
+          </>
         )}
+        </div>
       </div>
     </div>
-  </div>
   );
 }

@@ -16,6 +16,11 @@ interface StatsSummary {
   totalBundles: number;
 }
 
+interface ComparisonStats {
+  free: StatsSummary;
+  vip: StatsSummary;
+}
+
 export default function Statistics() {
   const [stats, setStats] = useState<StatsSummary>({
     totalPredictions: 0,
@@ -27,6 +32,7 @@ export default function Statistics() {
     totalBundles: 0,
   });
   const [dailyStats, setDailyStats] = useState<any[]>([]);
+  const [comparisonStats, setComparisonStats] = useState<ComparisonStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
@@ -38,6 +44,7 @@ export default function Statistics() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchStatistics();
+      fetchComparisonData();
     }
   }, [isAuthenticated]);
 
@@ -98,6 +105,55 @@ export default function Statistics() {
       }, {});
 
       setDailyStats(Object.values(dailyData).slice(-7)); // Last 7 days
+    }
+  };
+
+  const fetchComparisonData = async () => {
+    // Fetch both free and VIP predictions
+    const { data: freePredictions } = await supabase
+      .from('predictions')
+      .select('*')
+      .eq('prediction_type', 'free');
+
+    const { data: vipPredictions } = await supabase
+      .from('predictions')
+      .select('*')
+      .eq('prediction_type', 'vip');
+
+    const { data: freeBundles } = await supabase
+      .from('prediction_bundles')
+      .select('*')
+      .eq('prediction_type', 'free');
+
+    const { data: vipBundles } = await supabase
+      .from('prediction_bundles')
+      .select('*')
+      .eq('prediction_type', 'vip');
+
+    const calculateStats = (predictions: any[], bundles: any[]): StatsSummary => {
+      const won = predictions.filter(p => p.result === 'won').length;
+      const lost = predictions.filter(p => p.result === 'lost').length;
+      const pending = predictions.filter(p => p.result === 'pending' || !p.result).length;
+      const total = predictions.length;
+      const winRate = total > 0 ? ((won / (won + lost)) * 100) : 0;
+      const avgOdds = total > 0 ? predictions.reduce((sum, p) => sum + parseFloat(p.odds as any), 0) / total : 0;
+
+      return {
+        totalPredictions: total,
+        wonPredictions: won,
+        lostPredictions: lost,
+        pendingPredictions: pending,
+        winRate: winRate,
+        averageOdds: avgOdds,
+        totalBundles: bundles.length,
+      };
+    };
+
+    if (freePredictions && vipPredictions && freeBundles && vipBundles) {
+      setComparisonStats({
+        free: calculateStats(freePredictions, freeBundles),
+        vip: calculateStats(vipPredictions, vipBundles),
+      });
     }
   };
 
@@ -269,6 +325,151 @@ export default function Statistics() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
+
+          {/* VIP vs Free Comparison */}
+          {comparisonStats && (
+            <div className="mt-8">
+              <div className="mb-6">
+                <h3 className="text-3xl font-bold text-foreground mb-2">VIP vs Free Comparison</h3>
+                <p className="text-muted-foreground">Performance comparison between prediction types</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Free Predictions Summary */}
+                <Card className="bg-card/80 backdrop-blur border-border">
+                  <CardHeader>
+                    <CardTitle className="text-foreground flex items-center gap-2">
+                      🆓 Free Predictions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 bg-muted/30 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Total</p>
+                        <p className="text-2xl font-bold text-foreground">{comparisonStats.free.totalPredictions}</p>
+                      </div>
+                      <div className="p-3 bg-status-won/10 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Win Rate</p>
+                        <p className="text-2xl font-bold text-status-won">{comparisonStats.free.winRate.toFixed(1)}%</p>
+                      </div>
+                      <div className="p-3 bg-muted/30 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Avg Odds</p>
+                        <p className="text-2xl font-bold text-foreground">{comparisonStats.free.averageOdds.toFixed(2)}</p>
+                      </div>
+                      <div className="p-3 bg-muted/30 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Bundles</p>
+                        <p className="text-2xl font-bold text-foreground">{comparisonStats.free.totalBundles}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 text-sm">
+                      <span className="px-3 py-1 bg-status-won/10 text-status-won rounded-full">
+                        Won: {comparisonStats.free.wonPredictions}
+                      </span>
+                      <span className="px-3 py-1 bg-status-lost/10 text-status-lost rounded-full">
+                        Lost: {comparisonStats.free.lostPredictions}
+                      </span>
+                      <span className="px-3 py-1 bg-status-pending/10 text-status-pending rounded-full">
+                        Pending: {comparisonStats.free.pendingPredictions}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* VIP Predictions Summary */}
+                <Card className="bg-card/80 backdrop-blur border-border border-primary/30">
+                  <CardHeader>
+                    <CardTitle className="text-foreground flex items-center gap-2">
+                      🔒 VIP Predictions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 bg-muted/30 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Total</p>
+                        <p className="text-2xl font-bold text-foreground">{comparisonStats.vip.totalPredictions}</p>
+                      </div>
+                      <div className="p-3 bg-status-won/10 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Win Rate</p>
+                        <p className="text-2xl font-bold text-status-won">{comparisonStats.vip.winRate.toFixed(1)}%</p>
+                      </div>
+                      <div className="p-3 bg-muted/30 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Avg Odds</p>
+                        <p className="text-2xl font-bold text-foreground">{comparisonStats.vip.averageOdds.toFixed(2)}</p>
+                      </div>
+                      <div className="p-3 bg-muted/30 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Bundles</p>
+                        <p className="text-2xl font-bold text-foreground">{comparisonStats.vip.totalBundles}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 text-sm">
+                      <span className="px-3 py-1 bg-status-won/10 text-status-won rounded-full">
+                        Won: {comparisonStats.vip.wonPredictions}
+                      </span>
+                      <span className="px-3 py-1 bg-status-lost/10 text-status-lost rounded-full">
+                        Lost: {comparisonStats.vip.lostPredictions}
+                      </span>
+                      <span className="px-3 py-1 bg-status-pending/10 text-status-pending rounded-full">
+                        Pending: {comparisonStats.vip.pendingPredictions}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Comparison Bar Chart */}
+              <Card className="bg-card/80 backdrop-blur border-border">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Head-to-Head Comparison</CardTitle>
+                  <CardDescription>Win rates and performance metrics compared</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={350}>
+                    <BarChart 
+                      data={[
+                        {
+                          metric: 'Win Rate %',
+                          Free: comparisonStats.free.winRate,
+                          VIP: comparisonStats.vip.winRate,
+                        },
+                        {
+                          metric: 'Avg Odds',
+                          Free: comparisonStats.free.averageOdds,
+                          VIP: comparisonStats.vip.averageOdds,
+                        },
+                        {
+                          metric: 'Total Predictions',
+                          Free: comparisonStats.free.totalPredictions / 10, // Scale down for better visualization
+                          VIP: comparisonStats.vip.totalPredictions / 10,
+                        },
+                      ]}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="metric" stroke="hsl(var(--muted-foreground))" />
+                      <YAxis stroke="hsl(var(--muted-foreground))" />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                        formatter={(value: any, name: string, props: any) => {
+                          if (props.dataKey === 'Free' || props.dataKey === 'VIP') {
+                            if (props.payload.metric === 'Total Predictions') {
+                              return [(value * 10).toFixed(0), name]; // Scale back up for display
+                            }
+                          }
+                          return [value.toFixed(2), name];
+                        }}
+                      />
+                      <Legend />
+                      <Bar dataKey="Free" fill="hsl(var(--accent))" name="Free" />
+                      <Bar dataKey="VIP" fill="hsl(var(--primary))" name="VIP" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
     </div>
