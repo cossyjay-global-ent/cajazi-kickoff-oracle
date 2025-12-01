@@ -129,6 +129,11 @@ export const Header = () => {
                 Statistics
               </Button>
             </Link>
+            <Link to="/history">
+              <Button variant={isActive("/history") ? "default" : "ghost"} size="sm">
+                History
+              </Button>
+            </Link>
             <Link to="/vip">
               <Button variant={isActive("/vip") ? "default" : "ghost"} size="sm">
                 VIP Predictions
@@ -206,6 +211,11 @@ export const Header = () => {
                   <Link to="/statistics" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant={isActive("/statistics") ? "default" : "ghost"} className="w-full justify-start">
                       Statistics
+                    </Button>
+                  </Link>
+                  <Link to="/history" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant={isActive("/history") ? "default" : "ghost"} className="w-full justify-start">
+                      History
                     </Button>
                   </Link>
                   <Link to="/vip" onClick={() => setMobileMenuOpen(false)}>
