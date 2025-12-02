@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Trophy, TrendingUp, Target, Percent } from "lucide-react";
+import { Trophy, TrendingUp, Target, Percent, Filter } from "lucide-react";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 interface StatsSummary {
   totalPredictions: number;
@@ -52,6 +54,9 @@ export default function Statistics() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [dateRange, setDateRange] = useState<'7days' | '30days' | 'all'>('7days');
+  const [sportFilter, setSportFilter] = useState<string>('all');
+  const [availableSports, setAvailableSports] = useState<string[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -64,8 +69,17 @@ export default function Statistics() {
       fetchComparisonData();
       fetchPredictionTypeAnalytics();
       fetchLeaderboard();
+      fetchAvailableSports();
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchStatistics();
+      fetchComparisonData();
+      fetchPredictionTypeAnalytics();
+    }
+  }, [isAuthenticated, dateRange, sportFilter]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -78,13 +92,49 @@ export default function Statistics() {
     setLoading(false);
   };
 
+  const fetchAvailableSports = async () => {
+    const { data } = await supabase
+      .from('predictions')
+      .select('sport_category')
+      .not('sport_category', 'is', null);
+    
+    if (data) {
+      const uniqueSports = Array.from(new Set(data.map(p => p.sport_category).filter(Boolean)));
+      setAvailableSports(uniqueSports as string[]);
+    }
+  };
+
+  const getDateFilter = () => {
+    const now = new Date();
+    if (dateRange === '7days') {
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(now.getDate() - 7);
+      return sevenDaysAgo.toISOString();
+    } else if (dateRange === '30days') {
+      const thirtyDaysAgo = new Date(now);
+      thirtyDaysAgo.setDate(now.getDate() - 30);
+      return thirtyDaysAgo.toISOString();
+    }
+    return null;
+  };
+
   const fetchStatistics = async () => {
-    // Fetch all predictions
-    const { data: predictions } = await supabase
+    let query = supabase
       .from('predictions')
       .select('*')
       .eq('prediction_type', 'free')
       .order('created_at', { ascending: false });
+
+    const dateFilter = getDateFilter();
+    if (dateFilter) {
+      query = query.gte('created_at', dateFilter);
+    }
+
+    if (sportFilter !== 'all') {
+      query = query.eq('sport_category', sportFilter);
+    }
+
+    const { data: predictions } = await query;
 
     // Fetch all bundles
     const { data: bundles } = await supabase
@@ -128,16 +178,29 @@ export default function Statistics() {
   };
 
   const fetchComparisonData = async () => {
-    // Fetch both free and VIP predictions
-    const { data: freePredictions } = await supabase
+    let freeQuery = supabase
       .from('predictions')
       .select('*')
       .eq('prediction_type', 'free');
 
-    const { data: vipPredictions } = await supabase
+    let vipQuery = supabase
       .from('predictions')
       .select('*')
       .eq('prediction_type', 'vip');
+
+    const dateFilter = getDateFilter();
+    if (dateFilter) {
+      freeQuery = freeQuery.gte('created_at', dateFilter);
+      vipQuery = vipQuery.gte('created_at', dateFilter);
+    }
+
+    if (sportFilter !== 'all') {
+      freeQuery = freeQuery.eq('sport_category', sportFilter);
+      vipQuery = vipQuery.eq('sport_category', sportFilter);
+    }
+
+    const { data: freePredictions } = await freeQuery;
+    const { data: vipPredictions } = await vipQuery;
 
     const { data: freeBundles } = await supabase
       .from('prediction_bundles')
@@ -177,10 +240,21 @@ export default function Statistics() {
   };
 
   const fetchPredictionTypeAnalytics = async () => {
-    const { data: predictions } = await supabase
+    let query = supabase
       .from('predictions')
       .select('prediction_text, result')
       .in('result', ['won', 'lost']);
+
+    const dateFilter = getDateFilter();
+    if (dateFilter) {
+      query = query.gte('created_at', dateFilter);
+    }
+
+    if (sportFilter !== 'all') {
+      query = query.eq('sport_category', sportFilter);
+    }
+
+    const { data: predictions } = await query;
 
     if (predictions) {
       // Extract prediction types and calculate stats
@@ -281,8 +355,56 @@ export default function Statistics() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <h2 className="text-4xl font-bold text-foreground mb-2">Statistics Dashboard</h2>
-            <p className="text-muted-foreground">Performance analytics and insights</p>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-4xl font-bold text-foreground mb-2">Statistics Dashboard</h2>
+                <p className="text-muted-foreground">Performance analytics and insights</p>
+              </div>
+              
+              {/* Filters */}
+              <div className="flex flex-wrap gap-3">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-muted-foreground" />
+                  <Select value={dateRange} onValueChange={(value: any) => setDateRange(value)}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Date Range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7days">Last 7 Days</SelectItem>
+                      <SelectItem value="30days">Last 30 Days</SelectItem>
+                      <SelectItem value="all">All Time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Select value={sportFilter} onValueChange={setSportFilter}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Sport" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sports</SelectItem>
+                    {availableSports.map(sport => (
+                      <SelectItem key={sport} value={sport}>
+                        {sport}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {(dateRange !== '7days' || sportFilter !== 'all') && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setDateRange('7days');
+                      setSportFilter('all');
+                    }}
+                  >
+                    Reset Filters
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Summary Cards */}
