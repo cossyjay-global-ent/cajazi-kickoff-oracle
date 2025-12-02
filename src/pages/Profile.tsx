@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Trophy, Target, TrendingUp, Heart, Eye, Award, Calendar } from "lucide-react";
+import { User, Trophy, Target, TrendingUp, Heart, Eye, Award, Calendar, Star, Zap, Crown, Medal, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 interface UserProfile {
   id: string;
@@ -35,6 +36,23 @@ interface Favorite {
   predictions: Prediction;
 }
 
+interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: any;
+  requirement: number;
+  unlocked: boolean;
+  progress: number;
+  color: string;
+}
+
+interface PerformanceTrend {
+  date: string;
+  successRate: number;
+  total: number;
+}
+
 export default function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [user, setUser] = useState<any>(null);
@@ -42,6 +60,8 @@ export default function Profile() {
   const [viewedPredictions, setViewedPredictions] = useState<Prediction[]>([]);
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [performanceTrend, setPerformanceTrend] = useState<PerformanceTrend[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -136,6 +156,157 @@ export default function Profile() {
     if (activityData) {
       setRecentActivity(activityData);
     }
+
+    // Calculate achievements
+    calculateAchievements(profileData, viewsData?.length || 0, favoritesData?.length || 0);
+
+    // Calculate performance trend
+    await calculatePerformanceTrend();
+  };
+
+  const calculateAchievements = (profile: UserProfile, viewsCount: number, favoritesCount: number) => {
+    const successRate = profile.predictions_viewed > 0 
+      ? (profile.correct_predictions / profile.predictions_viewed) * 100 
+      : 0;
+
+    const achievementsList: Achievement[] = [
+      {
+        id: 'first_win',
+        name: 'First Win',
+        description: 'Your first correct prediction',
+        icon: Star,
+        requirement: 1,
+        unlocked: profile.correct_predictions >= 1,
+        progress: Math.min(profile.correct_predictions, 1),
+        color: 'text-yellow-500'
+      },
+      {
+        id: 'ten_correct',
+        name: '10 Correct Predictions',
+        description: 'Made 10 correct predictions',
+        icon: Target,
+        requirement: 10,
+        unlocked: profile.correct_predictions >= 10,
+        progress: Math.min(profile.correct_predictions, 10),
+        color: 'text-blue-500'
+      },
+      {
+        id: 'fifty_correct',
+        name: '50 Correct Predictions',
+        description: 'Made 50 correct predictions',
+        icon: Trophy,
+        requirement: 50,
+        unlocked: profile.correct_predictions >= 50,
+        progress: Math.min(profile.correct_predictions, 50),
+        color: 'text-purple-500'
+      },
+      {
+        id: 'success_rate_70',
+        name: '70% Success Rate',
+        description: 'Achieved 70% success rate',
+        icon: TrendingUp,
+        requirement: 70,
+        unlocked: successRate >= 70,
+        progress: Math.min(successRate, 70),
+        color: 'text-green-500'
+      },
+      {
+        id: 'success_rate_80',
+        name: '80% Success Rate',
+        description: 'Achieved 80% success rate',
+        icon: Award,
+        requirement: 80,
+        unlocked: successRate >= 80,
+        progress: Math.min(successRate, 80),
+        color: 'text-emerald-500'
+      },
+      {
+        id: 'hundred_views',
+        name: '100 Predictions Viewed',
+        description: 'Viewed 100 predictions',
+        icon: Eye,
+        requirement: 100,
+        unlocked: profile.predictions_viewed >= 100,
+        progress: Math.min(profile.predictions_viewed, 100),
+        color: 'text-indigo-500'
+      },
+      {
+        id: 'dedicated_fan',
+        name: 'Dedicated Fan',
+        description: 'Added 10 favorites',
+        icon: Heart,
+        requirement: 10,
+        unlocked: favoritesCount >= 10,
+        progress: Math.min(favoritesCount, 10),
+        color: 'text-pink-500'
+      },
+      {
+        id: 'master_predictor',
+        name: 'Master Predictor',
+        description: 'Made 100 correct predictions',
+        icon: Crown,
+        requirement: 100,
+        unlocked: profile.correct_predictions >= 100,
+        progress: Math.min(profile.correct_predictions, 100),
+        color: 'text-amber-500'
+      },
+    ];
+
+    setAchievements(achievementsList);
+  };
+
+  const calculatePerformanceTrend = async () => {
+    if (!user) return;
+
+    // Get views with their predictions over the last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: viewsData } = await supabase
+      .from('user_prediction_views')
+      .select('prediction_id, viewed_at')
+      .eq('user_id', user.id)
+      .gte('viewed_at', thirtyDaysAgo.toISOString())
+      .order('viewed_at', { ascending: true });
+
+    if (viewsData && viewsData.length > 0) {
+      const predictionIds = viewsData.map(v => v.prediction_id);
+      const { data: predictionsData } = await supabase
+        .from('predictions')
+        .select('id, result')
+        .in('id', predictionIds);
+
+      if (predictionsData) {
+        // Group by week
+        const weeklyData: { [key: string]: { correct: number; total: number } } = {};
+        
+        viewsData.forEach(view => {
+          const prediction = predictionsData.find(p => p.id === view.prediction_id);
+          if (prediction && prediction.result !== 'pending') {
+            const weekStart = new Date(view.viewed_at);
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week
+            const weekKey = format(weekStart, 'MMM dd');
+            
+            if (!weeklyData[weekKey]) {
+              weeklyData[weekKey] = { correct: 0, total: 0 };
+            }
+            
+            weeklyData[weekKey].total++;
+            if (prediction.result === 'won') {
+              weeklyData[weekKey].correct++;
+            }
+          }
+        });
+
+        const trendData: PerformanceTrend[] = Object.entries(weeklyData).map(([date, data]) => ({
+          date,
+          successRate: data.total > 0 ? (data.correct / data.total) * 100 : 0,
+          total: data.total,
+        }));
+
+        setPerformanceTrend(trendData);
+      }
+    }
   };
 
   if (loading) {
@@ -217,6 +388,127 @@ export default function Profile() {
                   <div className="text-2xl font-bold text-foreground">{favorites.length}</div>
                   <div className="text-xs text-muted-foreground">Favorites</div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Performance Trend Chart */}
+          {performanceTrend.length > 0 && (
+            <Card className="bg-card/80 backdrop-blur border-border mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  Performance Trend
+                </CardTitle>
+                <CardDescription>Your success rate over the last 30 days (by week)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={performanceTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="hsl(var(--muted-foreground))"
+                      style={{ fontSize: '12px' }}
+                    />
+                    <YAxis 
+                      stroke="hsl(var(--muted-foreground))"
+                      style={{ fontSize: '12px' }}
+                      domain={[0, 100]}
+                      label={{ value: 'Success Rate (%)', angle: -90, position: 'insideLeft', style: { fill: 'hsl(var(--muted-foreground))' } }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                      formatter={(value: number, name: string) => {
+                        if (name === 'successRate') return [`${value.toFixed(1)}%`, 'Success Rate'];
+                        return [value, name];
+                      }}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="successRate" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={3}
+                      name="Success Rate"
+                      dot={{ fill: 'hsl(var(--primary))', r: 5 }}
+                      activeDot={{ r: 7 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+                <div className="mt-4 text-center text-sm text-muted-foreground">
+                  Tracking your prediction accuracy week by week
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Achievements Section */}
+          <Card className="bg-card/80 backdrop-blur border-border mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-primary" />
+                Achievements & Badges
+              </CardTitle>
+              <CardDescription>
+                Unlock achievements by reaching milestones • {achievements.filter(a => a.unlocked).length}/{achievements.length} unlocked
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {achievements.map((achievement) => {
+                  const Icon = achievement.icon;
+                  return (
+                    <div 
+                      key={achievement.id}
+                      className={`relative p-4 rounded-lg border-2 transition-all ${
+                        achievement.unlocked 
+                          ? 'bg-primary/5 border-primary shadow-lg shadow-primary/20' 
+                          : 'bg-muted/30 border-border opacity-60'
+                      }`}
+                    >
+                      {achievement.unlocked && (
+                        <div className="absolute -top-2 -right-2 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                          <Medal className="h-4 w-4 text-primary-foreground" />
+                        </div>
+                      )}
+                      <div className="flex flex-col items-center text-center gap-2">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                          achievement.unlocked ? 'bg-primary/10' : 'bg-muted'
+                        }`}>
+                          <Icon className={`h-6 w-6 ${achievement.unlocked ? achievement.color : 'text-muted-foreground'}`} />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm text-foreground">{achievement.name}</h4>
+                          <p className="text-xs text-muted-foreground mt-1">{achievement.description}</p>
+                        </div>
+                        {!achievement.unlocked && (
+                          <div className="w-full mt-2">
+                            <div className="w-full bg-muted rounded-full h-2">
+                              <div 
+                                className="bg-primary rounded-full h-2 transition-all"
+                                style={{ width: `${(achievement.progress / achievement.requirement) * 100}%` }}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {achievement.progress}/{achievement.requirement}
+                            </p>
+                          </div>
+                        )}
+                        {achievement.unlocked && (
+                          <Badge variant="default" className="text-xs mt-2">
+                            <Zap className="h-3 w-3 mr-1" />
+                            Unlocked
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
