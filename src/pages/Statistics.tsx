@@ -21,6 +21,21 @@ interface ComparisonStats {
   vip: StatsSummary;
 }
 
+interface PredictionTypeStats {
+  type: string;
+  total: number;
+  won: number;
+  lost: number;
+  winRate: number;
+}
+
+interface LeaderboardUser {
+  email: string;
+  totalPredictions: number;
+  correctPredictions: number;
+  successRate: number;
+}
+
 export default function Statistics() {
   const [stats, setStats] = useState<StatsSummary>({
     totalPredictions: 0,
@@ -33,6 +48,8 @@ export default function Statistics() {
   });
   const [dailyStats, setDailyStats] = useState<any[]>([]);
   const [comparisonStats, setComparisonStats] = useState<ComparisonStats | null>(null);
+  const [predictionTypeStats, setPredictionTypeStats] = useState<PredictionTypeStats[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
@@ -45,6 +62,8 @@ export default function Statistics() {
     if (isAuthenticated) {
       fetchStatistics();
       fetchComparisonData();
+      fetchPredictionTypeAnalytics();
+      fetchLeaderboard();
     }
   }, [isAuthenticated]);
 
@@ -154,6 +173,86 @@ export default function Statistics() {
         free: calculateStats(freePredictions, freeBundles),
         vip: calculateStats(vipPredictions, vipBundles),
       });
+    }
+  };
+
+  const fetchPredictionTypeAnalytics = async () => {
+    const { data: predictions } = await supabase
+      .from('predictions')
+      .select('prediction_text, result')
+      .in('result', ['won', 'lost']);
+
+    if (predictions) {
+      // Extract prediction types and calculate stats
+      const typeMap = new Map<string, { total: number; won: number; lost: number }>();
+      
+      predictions.forEach(pred => {
+        // Extract prediction type from prediction_text
+        let type = 'Other';
+        const text = pred.prediction_text.toLowerCase();
+        
+        if (text.includes('over') || text.includes('under')) {
+          type = 'Over/Under';
+        } else if (text.includes('btts') || text.includes('both teams to score')) {
+          type = 'BTTS';
+        } else if (text.includes('1x2') || text.includes('home') || text.includes('away') || text.includes('draw')) {
+          type = '1X2';
+        } else if (text.includes('correct score')) {
+          type = 'Correct Score';
+        } else if (text.includes('double chance')) {
+          type = 'Double Chance';
+        } else if (text.includes('handicap') || text.includes('ah')) {
+          type = 'Handicap';
+        }
+        
+        if (!typeMap.has(type)) {
+          typeMap.set(type, { total: 0, won: 0, lost: 0 });
+        }
+        
+        const stats = typeMap.get(type)!;
+        stats.total++;
+        if (pred.result === 'won') stats.won++;
+        else if (pred.result === 'lost') stats.lost++;
+      });
+      
+      // Convert to array and calculate win rates
+      const typeStats: PredictionTypeStats[] = Array.from(typeMap.entries())
+        .map(([type, stats]) => ({
+          type,
+          total: stats.total,
+          won: stats.won,
+          lost: stats.lost,
+          winRate: (stats.won / stats.total) * 100,
+        }))
+        .filter(stat => stat.total >= 3) // Only show types with at least 3 predictions
+        .sort((a, b) => b.winRate - a.winRate);
+      
+      setPredictionTypeStats(typeStats);
+    }
+  };
+
+  const fetchLeaderboard = async () => {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('email, predictions_viewed, correct_predictions')
+      .gte('predictions_viewed', 5) // Only users with at least 5 viewed predictions
+      .order('correct_predictions', { ascending: false });
+
+    if (profiles) {
+      const leaderboardData: LeaderboardUser[] = profiles
+        .map(profile => ({
+          email: profile.email,
+          totalPredictions: profile.predictions_viewed || 0,
+          correctPredictions: profile.correct_predictions || 0,
+          successRate: profile.predictions_viewed > 0 
+            ? (profile.correct_predictions / profile.predictions_viewed) * 100 
+            : 0,
+        }))
+        .filter(user => user.totalPredictions >= 5)
+        .sort((a, b) => b.successRate - a.successRate)
+        .slice(0, 10); // Top 10 users
+      
+      setLeaderboard(leaderboardData);
     }
   };
 
@@ -466,6 +565,111 @@ export default function Statistics() {
                       <Bar dataKey="VIP" fill="hsl(var(--primary))" name="VIP" />
                     </BarChart>
                   </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Prediction Type Analytics */}
+          {predictionTypeStats.length > 0 && (
+            <div className="mt-8">
+              <div className="mb-6">
+                <h3 className="text-3xl font-bold text-foreground mb-2">Prediction Type Analytics</h3>
+                <p className="text-muted-foreground">Win rates by prediction type</p>
+              </div>
+
+              <Card className="bg-card/80 backdrop-blur border-border">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Win Rate by Prediction Type</CardTitle>
+                  <CardDescription>Performance analysis across different bet types</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={predictionTypeStats} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
+                      <YAxis dataKey="type" type="category" stroke="hsl(var(--muted-foreground))" width={120} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                        formatter={(value: number) => `${value.toFixed(1)}%`}
+                      />
+                      <Legend />
+                      <Bar dataKey="winRate" fill="hsl(var(--primary))" name="Win Rate (%)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-6">
+                    {predictionTypeStats.map((stat) => (
+                      <div key={stat.type} className="p-3 bg-muted/30 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">{stat.type}</p>
+                        <p className="text-lg font-bold text-primary">{stat.winRate.toFixed(1)}%</p>
+                        <p className="text-xs text-muted-foreground">{stat.won}/{stat.total} won</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Leaderboard */}
+          {leaderboard.length > 0 && (
+            <div className="mt-8">
+              <div className="mb-6">
+                <h3 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-2">
+                  <Trophy className="h-8 w-8 text-primary" />
+                  Top Performers Leaderboard
+                </h3>
+                <p className="text-muted-foreground">Users with the highest prediction success rates</p>
+              </div>
+
+              <Card className="bg-card/80 backdrop-blur border-border">
+                <CardContent className="pt-6">
+                  <div className="space-y-3">
+                    {leaderboard.map((user, index) => (
+                      <div 
+                        key={user.email}
+                        className={`flex items-center justify-between p-4 rounded-lg transition-all ${
+                          index === 0 ? 'bg-primary/10 border-2 border-primary' :
+                          index === 1 ? 'bg-accent/10 border-2 border-accent' :
+                          index === 2 ? 'bg-muted border-2 border-muted-foreground' :
+                          'bg-muted/30 border border-border'
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold ${
+                            index === 0 ? 'bg-primary text-primary-foreground' :
+                            index === 1 ? 'bg-accent text-accent-foreground' :
+                            index === 2 ? 'bg-muted-foreground text-background' :
+                            'bg-muted text-muted-foreground'
+                          }`}>
+                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-foreground">{user.email}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {user.correctPredictions} correct out of {user.totalPredictions} predictions
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-2xl font-bold ${
+                            index === 0 ? 'text-primary' :
+                            index === 1 ? 'text-accent' :
+                            index === 2 ? 'text-muted-foreground' :
+                            'text-foreground'
+                          }`}>
+                            {user.successRate.toFixed(1)}%
+                          </p>
+                          <p className="text-xs text-muted-foreground">Success Rate</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </div>
