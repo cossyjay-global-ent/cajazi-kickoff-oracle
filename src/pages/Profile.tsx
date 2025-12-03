@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useAchievementNotifications } from "@/hooks/useAchievementNotifications";
 
 interface UserProfile {
   id: string;
@@ -63,6 +64,9 @@ export default function Profile() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [performanceTrend, setPerformanceTrend] = useState<PerformanceTrend[]>([]);
   const navigate = useNavigate();
+  
+  // Track achievement unlocks and show notifications
+  useAchievementNotifications(achievements);
 
   useEffect(() => {
     checkAuth();
