@@ -165,6 +165,7 @@ export type Database = {
           correct_predictions: number | null
           created_at: string
           email: string
+          featured_achievement: string | null
           id: string
           predictions_viewed: number | null
         }
@@ -172,6 +173,7 @@ export type Database = {
           correct_predictions?: number | null
           created_at?: string
           email: string
+          featured_achievement?: string | null
           id: string
           predictions_viewed?: number | null
         }
@@ -179,8 +181,42 @@ export type Database = {
           correct_predictions?: number | null
           created_at?: string
           email?: string
+          featured_achievement?: string | null
           id?: string
           predictions_viewed?: number | null
+        }
+        Relationships: []
+      }
+      seasonal_achievements: {
+        Row: {
+          achievement_id: string
+          created_at: string
+          id: string
+          season_end: string
+          season_start: string
+          season_type: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          created_at?: string
+          id?: string
+          season_end: string
+          season_start: string
+          season_type: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          created_at?: string
+          id?: string
+          season_end?: string
+          season_start?: string
+          season_type?: string
+          unlocked_at?: string
+          user_id?: string
         }
         Relationships: []
       }
