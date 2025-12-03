@@ -6,6 +6,7 @@ import { Trophy, Medal, Crown, Star, Target, Award, TrendingUp, Eye, Heart, User
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { UserBadge } from "@/components/UserBadge";
 
 interface LeaderboardUser {
   id: string;
@@ -14,6 +15,7 @@ interface LeaderboardUser {
   correct_predictions: number;
   success_rate: number;
   unlocked_badges: number;
+  featured_achievement: string | null;
   rank: number;
 }
 
@@ -109,6 +111,7 @@ export default function Leaderboard() {
           correct_predictions: profile.correct_predictions || 0,
           success_rate: successRate,
           unlocked_badges: unlockedBadges,
+          featured_achievement: profile.featured_achievement || null,
           rank: index + 1,
         };
       })
@@ -270,6 +273,9 @@ export default function Leaderboard() {
                               <p className="font-semibold text-foreground truncate">
                                 {maskEmail(user.email)}
                               </p>
+                              {user.featured_achievement && (
+                                <UserBadge achievementId={user.featured_achievement} size="sm" />
+                              )}
                               {user.id === currentUserId && (
                                 <Badge variant="secondary" className="text-xs">You</Badge>
                               )}
@@ -322,6 +328,9 @@ export default function Leaderboard() {
                               <p className="font-semibold text-foreground truncate">
                                 {maskEmail(user.email)}
                               </p>
+                              {user.featured_achievement && (
+                                <UserBadge achievementId={user.featured_achievement} size="sm" />
+                              )}
                               {user.id === currentUserId && (
                                 <Badge variant="secondary" className="text-xs">You</Badge>
                               )}

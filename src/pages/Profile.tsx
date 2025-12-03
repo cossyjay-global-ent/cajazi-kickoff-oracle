@@ -2,13 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Trophy, Target, TrendingUp, Heart, Eye, Award, Calendar, Star, Zap, Crown, Medal, Gift } from "lucide-react";
+import { User, Trophy, Target, TrendingUp, Heart, Eye, Award, Calendar, Star, Zap, Crown, Medal, Gift, Flame, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useAchievementNotifications } from "@/hooks/useAchievementNotifications";
+import { UserBadge, SEASONAL_ACHIEVEMENTS } from "@/components/UserBadge";
 
 interface UserProfile {
   id: string;
@@ -16,6 +18,16 @@ interface UserProfile {
   predictions_viewed: number;
   correct_predictions: number;
   created_at: string;
+  featured_achievement: string | null;
+}
+
+interface SeasonalAchievement {
+  id: string;
+  achievement_id: string;
+  season_type: string;
+  season_start: string;
+  season_end: string;
+  unlocked_at: string;
 }
 
 interface Prediction {
@@ -63,6 +75,8 @@ export default function Profile() {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [performanceTrend, setPerformanceTrend] = useState<PerformanceTrend[]>([]);
+  const [seasonalAchievements, setSeasonalAchievements] = useState<SeasonalAchievement[]>([]);
+  const [settingFeatured, setSettingFeatured] = useState(false);
   const navigate = useNavigate();
   
   // Track achievement unlocks and show notifications
@@ -166,6 +180,122 @@ export default function Profile() {
 
     // Calculate performance trend
     await calculatePerformanceTrend();
+    
+    // Fetch seasonal achievements
+    await fetchSeasonalAchievements();
+    
+    // Check for new seasonal achievements
+    await checkSeasonalAchievements(profileData);
+  };
+
+  const fetchSeasonalAchievements = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from('seasonal_achievements')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('season_end', new Date().toISOString())
+      .order('unlocked_at', { ascending: false });
+    
+    if (data) {
+      setSeasonalAchievements(data as SeasonalAchievement[]);
+    }
+  };
+
+  const checkSeasonalAchievements = async (profile: UserProfile | null) => {
+    if (!user || !profile) return;
+    
+    const now = new Date();
+    const weekStart = startOfWeek(now);
+    const weekEnd = endOfWeek(now);
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
+    
+    // Get predictions viewed this week
+    const { data: weekViews } = await supabase
+      .from('user_prediction_views')
+      .select('prediction_id')
+      .eq('user_id', user.id)
+      .gte('viewed_at', weekStart.toISOString())
+      .lte('viewed_at', weekEnd.toISOString());
+    
+    if (weekViews && weekViews.length >= 5) {
+      const predictionIds = weekViews.map(v => v.prediction_id);
+      const { data: predictions } = await supabase
+        .from('predictions')
+        .select('id, result')
+        .in('id', predictionIds);
+      
+      if (predictions) {
+        const resolved = predictions.filter(p => p.result !== 'pending');
+        const won = predictions.filter(p => p.result === 'won');
+        
+        // Check Perfect Week (100% success rate, min 5 predictions)
+        if (resolved.length >= 5 && won.length === resolved.length) {
+          await unlockSeasonalAchievement('perfect_week', 'weekly', weekStart, weekEnd);
+        }
+        
+        // Check Hot Streak (5 correct in a row)
+        if (won.length >= 5) {
+          await unlockSeasonalAchievement('hot_streak', 'weekly', weekStart, weekEnd);
+        }
+      }
+    }
+  };
+
+  const unlockSeasonalAchievement = async (
+    achievementId: string, 
+    seasonType: string, 
+    seasonStart: Date, 
+    seasonEnd: Date
+  ) => {
+    if (!user) return;
+    
+    // Check if already unlocked this season
+    const { data: existing } = await supabase
+      .from('seasonal_achievements')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('achievement_id', achievementId)
+      .eq('season_start', seasonStart.toISOString())
+      .single();
+    
+    if (existing) return;
+    
+    // Insert new seasonal achievement
+    const { error } = await supabase
+      .from('seasonal_achievements')
+      .insert({
+        user_id: user.id,
+        achievement_id: achievementId,
+        season_type: seasonType,
+        season_start: seasonStart.toISOString(),
+        season_end: seasonEnd.toISOString(),
+      });
+    
+    if (!error) {
+      toast.success(`🔥 Seasonal Achievement Unlocked: ${achievementId.replace('_', ' ')}!`);
+      await fetchSeasonalAchievements();
+    }
+  };
+
+  const setFeaturedAchievement = async (achievementId: string | null) => {
+    if (!user) return;
+    
+    setSettingFeatured(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ featured_achievement: achievementId })
+      .eq('id', user.id);
+    
+    if (error) {
+      toast.error("Failed to update featured badge");
+    } else {
+      setProfile(prev => prev ? { ...prev, featured_achievement: achievementId } : null);
+      toast.success(achievementId ? "Featured badge updated!" : "Featured badge removed");
+    }
+    setSettingFeatured(false);
   };
 
   const calculateAchievements = (profile: UserProfile, viewsCount: number, favoritesCount: number) => {
@@ -341,11 +471,23 @@ export default function Profile() {
           <Card className="bg-card/80 backdrop-blur border-border mb-8">
             <CardContent className="pt-6">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center ring-4 ring-primary/20">
-                  <User className="w-12 h-12 text-primary-foreground" />
+                <div className="relative">
+                  <div className="w-24 h-24 bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center ring-4 ring-primary/20">
+                    <User className="w-12 h-12 text-primary-foreground" />
+                  </div>
+                  {profile.featured_achievement && (
+                    <div className="absolute -bottom-1 -right-1">
+                      <UserBadge achievementId={profile.featured_achievement} size="lg" />
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-3xl font-bold text-foreground mb-2">{user.email}</h2>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h2 className="text-3xl font-bold text-foreground">{user.email}</h2>
+                    {profile.featured_achievement && (
+                      <UserBadge achievementId={profile.featured_achievement} size="md" />
+                    )}
+                  </div>
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
@@ -460,21 +602,37 @@ export default function Profile() {
               </CardTitle>
               <CardDescription>
                 Unlock achievements by reaching milestones • {achievements.filter(a => a.unlocked).length}/{achievements.length} unlocked
+                {profile.featured_achievement && (
+                  <span className="ml-2">• Featured: <span className="text-primary font-medium">{achievements.find(a => a.id === profile.featured_achievement)?.name}</span></span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {achievements.map((achievement) => {
                   const Icon = achievement.icon;
+                  const isFeatured = profile.featured_achievement === achievement.id;
                   return (
                     <div 
                       key={achievement.id}
-                      className={`relative p-4 rounded-lg border-2 transition-all ${
+                      className={`relative p-4 rounded-lg border-2 transition-all cursor-pointer ${
                         achievement.unlocked 
-                          ? 'bg-primary/5 border-primary shadow-lg shadow-primary/20' 
+                          ? isFeatured 
+                            ? 'bg-primary/10 border-primary ring-2 ring-primary/50 shadow-lg shadow-primary/30' 
+                            : 'bg-primary/5 border-primary shadow-lg shadow-primary/20 hover:ring-2 hover:ring-primary/30' 
                           : 'bg-muted/30 border-border opacity-60'
                       }`}
+                      onClick={() => {
+                        if (achievement.unlocked && !settingFeatured) {
+                          setFeaturedAchievement(isFeatured ? null : achievement.id);
+                        }
+                      }}
                     >
+                      {isFeatured && (
+                        <div className="absolute -top-2 -left-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                          <Check className="h-3 w-3 text-primary-foreground" />
+                        </div>
+                      )}
                       {achievement.unlocked && (
                         <div className="absolute -top-2 -right-2 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                           <Medal className="h-4 w-4 text-primary-foreground" />
@@ -504,10 +662,79 @@ export default function Profile() {
                           </div>
                         )}
                         {achievement.unlocked && (
-                          <Badge variant="default" className="text-xs mt-2">
-                            <Zap className="h-3 w-3 mr-1" />
-                            Unlocked
-                          </Badge>
+                          <div className="flex flex-col items-center gap-1">
+                            <Badge variant={isFeatured ? "default" : "secondary"} className="text-xs">
+                              {isFeatured ? (
+                                <>
+                                  <Star className="h-3 w-3 mr-1" />
+                                  Featured
+                                </>
+                              ) : (
+                                <>
+                                  <Zap className="h-3 w-3 mr-1" />
+                                  Click to feature
+                                </>
+                              )}
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Seasonal Achievements Section */}
+          <Card className="bg-card/80 backdrop-blur border-border mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Flame className="h-5 w-5 text-orange-500" />
+                Seasonal Achievements
+              </CardTitle>
+              <CardDescription>
+                Time-limited achievements that reset weekly or monthly
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {SEASONAL_ACHIEVEMENTS.map((achievement) => {
+                  const Icon = achievement.icon;
+                  const isUnlocked = seasonalAchievements.some(s => s.achievement_id === achievement.id);
+                  return (
+                    <div 
+                      key={achievement.id}
+                      className={`relative p-4 rounded-lg border-2 transition-all ${
+                        isUnlocked 
+                          ? 'bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/50 shadow-lg' 
+                          : 'bg-muted/30 border-border opacity-70'
+                      }`}
+                    >
+                      {isUnlocked && (
+                        <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center animate-pulse">
+                          <Flame className="h-4 w-4 text-white" />
+                        </div>
+                      )}
+                      <div className="flex flex-col items-center text-center gap-2">
+                        <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                          isUnlocked 
+                            ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20' 
+                            : 'bg-muted'
+                        }`}>
+                          <Icon className={`h-7 w-7 ${isUnlocked ? achievement.color : 'text-muted-foreground'}`} />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-foreground">{achievement.name}</h4>
+                          <p className="text-xs text-muted-foreground mt-1">{achievement.description}</p>
+                        </div>
+                        <Badge variant={isUnlocked ? "default" : "outline"} className={`text-xs ${isUnlocked ? 'bg-gradient-to-r from-orange-500 to-red-500' : ''}`}>
+                          {achievement.type === 'weekly' ? '🔄 Weekly' : '📅 Monthly'}
+                        </Badge>
+                        {isUnlocked && (
+                          <p className="text-xs text-primary font-medium">
+                            ✨ Unlocked this {achievement.type === 'weekly' ? 'week' : 'month'}!
+                          </p>
                         )}
                       </div>
                     </div>
