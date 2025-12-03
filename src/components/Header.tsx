@@ -144,6 +144,11 @@ export const Header = () => {
                 Profile
               </Button>
             </Link>
+            <Link to="/leaderboard">
+              <Button variant={isActive("/leaderboard") ? "default" : "ghost"} size="sm">
+                Leaderboard
+              </Button>
+            </Link>
             {isAdmin && (
               <Link to="/admin">
                 <Button variant={isActive("/admin") ? "default" : "ghost"} size="sm">
@@ -226,6 +231,11 @@ export const Header = () => {
                   <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant={isActive("/profile") ? "default" : "ghost"} className="w-full justify-start">
                       Profile
+                    </Button>
+                  </Link>
+                  <Link to="/leaderboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant={isActive("/leaderboard") ? "default" : "ghost"} className="w-full justify-start">
+                      Leaderboard
                     </Button>
                   </Link>
                   {isAdmin && (
