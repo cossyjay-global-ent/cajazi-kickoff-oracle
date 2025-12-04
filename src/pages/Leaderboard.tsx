@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, Medal, Crown, Star, Target, Award, TrendingUp, Eye, Heart, Users } from "lucide-react";
@@ -259,9 +259,10 @@ export default function Leaderboard() {
                   ) : (
                     <div className="space-y-3">
                       {topPerformers.map((user) => (
-                        <div
+                        <Link
                           key={user.id}
-                          className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all ${getRankStyles(user.rank)} ${
+                          to={`/user/${user.id}`}
+                          className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all hover:scale-[1.01] cursor-pointer ${getRankStyles(user.rank)} ${
                             user.id === currentUserId ? 'ring-2 ring-primary' : ''
                           }`}
                         >
@@ -290,7 +291,7 @@ export default function Leaderboard() {
                             </div>
                             <div className="text-xs text-muted-foreground">Success Rate</div>
                           </div>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   )}
@@ -314,9 +315,10 @@ export default function Leaderboard() {
                   ) : (
                     <div className="space-y-3">
                       {topAchievers.map((user) => (
-                        <div
+                        <Link
                           key={user.id}
-                          className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all ${getRankStyles(user.rank)} ${
+                          to={`/user/${user.id}`}
+                          className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all hover:scale-[1.01] cursor-pointer ${getRankStyles(user.rank)} ${
                             user.id === currentUserId ? 'ring-2 ring-primary' : ''
                           }`}
                         >
@@ -358,7 +360,7 @@ export default function Leaderboard() {
                               / {ACHIEVEMENTS_LIST.length} Badges
                             </div>
                           </div>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   )}

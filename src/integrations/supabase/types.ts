@@ -164,6 +164,7 @@ export type Database = {
         Row: {
           correct_predictions: number | null
           created_at: string
+          display_name: string | null
           email: string
           featured_achievement: string | null
           id: string
@@ -172,6 +173,7 @@ export type Database = {
         Insert: {
           correct_predictions?: number | null
           created_at?: string
+          display_name?: string | null
           email: string
           featured_achievement?: string | null
           id: string
@@ -180,6 +182,7 @@ export type Database = {
         Update: {
           correct_predictions?: number | null
           created_at?: string
+          display_name?: string | null
           email?: string
           featured_achievement?: string | null
           id?: string

@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
+import PublicProfile from "./pages/PublicProfile";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -46,6 +47,7 @@ const App = () => {
               <Route path="/about" element={<About />} />
               <Route path="/history" element={<History />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/user/:userId" element={<PublicProfile />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
