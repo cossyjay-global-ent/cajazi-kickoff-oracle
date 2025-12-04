@@ -11,6 +11,7 @@ import { UserBadge } from "@/components/UserBadge";
 interface LeaderboardUser {
   id: string;
   email: string;
+  display_name: string | null;
   predictions_viewed: number;
   correct_predictions: number;
   success_rate: number;
@@ -107,6 +108,7 @@ export default function Leaderboard() {
         return {
           id: profile.id,
           email: profile.email,
+          display_name: profile.display_name || null,
           predictions_viewed: profile.predictions_viewed || 0,
           correct_predictions: profile.correct_predictions || 0,
           success_rate: successRate,
@@ -165,10 +167,11 @@ export default function Leaderboard() {
     }
   };
 
-  const maskEmail = (email: string) => {
-    const [name, domain] = email.split('@');
-    if (name.length <= 3) return email;
-    return `${name.slice(0, 3)}***@${domain}`;
+  const getDisplayName = (user: LeaderboardUser) => {
+    if (user.display_name) return user.display_name;
+    const [name] = user.email.split('@');
+    if (name.length <= 3) return name;
+    return `${name.slice(0, 3)}***`;
   };
 
   if (loading) {
@@ -272,7 +275,7 @@ export default function Leaderboard() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="font-semibold text-foreground truncate">
-                                {maskEmail(user.email)}
+                                {getDisplayName(user)}
                               </p>
                               {user.featured_achievement && (
                                 <UserBadge achievementId={user.featured_achievement} size="sm" />
@@ -328,7 +331,7 @@ export default function Leaderboard() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="font-semibold text-foreground truncate">
-                                {maskEmail(user.email)}
+                                {getDisplayName(user)}
                               </p>
                               {user.featured_achievement && (
                                 <UserBadge achievementId={user.featured_achievement} size="sm" />
