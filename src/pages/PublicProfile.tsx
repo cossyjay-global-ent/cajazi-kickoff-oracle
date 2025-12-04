@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Trophy, Target, TrendingUp, Calendar, Eye, Star, Award, Heart, Crown, Flame, Zap } from "lucide-react";
+import { User, Trophy, Target, TrendingUp, Calendar, Eye, Star, Award, Heart, Crown, Flame, Zap, Users, UserPlus, UserMinus } from "lucide-react";
 import { format } from "date-fns";
 import { UserBadge, SEASONAL_ACHIEVEMENTS, getAchievementConfig } from "@/components/UserBadge";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { useFollowSystem } from "@/hooks/useFollowSystem";
 
 interface PublicUserProfile {
   id: string;
@@ -46,12 +47,22 @@ export default function PublicProfile() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [seasonalAchievements, setSeasonalAchievements] = useState<SeasonalAchievement[]>([]);
   const [notFound, setNotFound] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  // Follow system
+  const { isFollowing, followersCount, followingCount, toggleFollow, loading: followLoading } = useFollowSystem(userId || null, currentUserId);
 
   useEffect(() => {
+    checkAuth();
     if (userId) {
       fetchProfile();
     }
   }, [userId]);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setCurrentUserId(session?.user?.id || null);
+  };
 
   const fetchProfile = async () => {
     if (!userId) return;
@@ -257,7 +268,21 @@ export default function PublicProfile() {
                       <UserBadge achievementId={profile.featured_achievement} size="md" />
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  
+                  {/* Follower Stats */}
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="flex items-center gap-1 text-sm">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-semibold text-foreground">{followersCount}</span>
+                      <span className="text-muted-foreground">Followers</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm">
+                      <span className="font-semibold text-foreground">{followingCount}</span>
+                      <span className="text-muted-foreground">Following</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
                       <span>Member since {memberSince}</span>
@@ -267,6 +292,28 @@ export default function PublicProfile() {
                       <span>{unlockedAchievements.length} Badges</span>
                     </div>
                   </div>
+                  
+                  {/* Follow Button */}
+                  {currentUserId && currentUserId !== userId && (
+                    <Button 
+                      onClick={toggleFollow} 
+                      disabled={followLoading}
+                      variant={isFollowing ? "outline" : "default"}
+                      size="sm"
+                    >
+                      {isFollowing ? (
+                        <>
+                          <UserMinus className="h-4 w-4 mr-1" />
+                          Unfollow
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="h-4 w-4 mr-1" />
+                          Follow
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>

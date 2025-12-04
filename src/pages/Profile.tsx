@@ -2,19 +2,22 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Trophy, Target, TrendingUp, Heart, Eye, Award, Calendar, Star, Zap, Crown, Medal, Gift, Flame, Check } from "lucide-react";
+import { User, Trophy, Target, TrendingUp, Heart, Eye, Award, Calendar, Star, Zap, Crown, Medal, Gift, Flame, Check, Users, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useAchievementNotifications } from "@/hooks/useAchievementNotifications";
 import { UserBadge, SEASONAL_ACHIEVEMENTS } from "@/components/UserBadge";
+import { useFollowSystem } from "@/hooks/useFollowSystem";
 
 interface UserProfile {
   id: string;
   email: string;
+  display_name: string | null;
   predictions_viewed: number;
   correct_predictions: number;
   created_at: string;
@@ -77,7 +80,13 @@ export default function Profile() {
   const [performanceTrend, setPerformanceTrend] = useState<PerformanceTrend[]>([]);
   const [seasonalAchievements, setSeasonalAchievements] = useState<SeasonalAchievement[]>([]);
   const [settingFeatured, setSettingFeatured] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [savingName, setSavingName] = useState(false);
   const navigate = useNavigate();
+  
+  // Follow system
+  const { followersCount, followingCount } = useFollowSystem(user?.id || null, user?.id || null);
   
   // Track achievement unlocks and show notifications
   useAchievementNotifications(achievements);
@@ -114,7 +123,8 @@ export default function Profile() {
       .single();
 
     if (profileData) {
-      setProfile(profileData);
+      setProfile(profileData as UserProfile);
+      setDisplayName(profileData.display_name || '');
     }
 
     // Fetch viewed predictions
@@ -296,6 +306,31 @@ export default function Profile() {
       toast.success(achievementId ? "Featured badge updated!" : "Featured badge removed");
     }
     setSettingFeatured(false);
+  };
+
+  const saveDisplayName = async () => {
+    if (!user) return;
+    
+    const trimmedName = displayName.trim();
+    if (trimmedName.length > 50) {
+      toast.error("Display name must be 50 characters or less");
+      return;
+    }
+    
+    setSavingName(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ display_name: trimmedName || null })
+      .eq('id', user.id);
+    
+    if (error) {
+      toast.error("Failed to update display name");
+    } else {
+      setProfile(prev => prev ? { ...prev, display_name: trimmedName || null } : null);
+      toast.success("Display name updated!");
+      setEditingName(false);
+    }
+    setSavingName(false);
   };
 
   const calculateAchievements = (profile: UserProfile, viewsCount: number, favoritesCount: number) => {
@@ -482,12 +517,61 @@ export default function Profile() {
                   )}
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h2 className="text-3xl font-bold text-foreground">{user.email}</h2>
-                    {profile.featured_achievement && (
-                      <UserBadge achievementId={profile.featured_achievement} size="md" />
+                  {/* Display Name Section */}
+                  <div className="flex items-center gap-2 mb-1">
+                    {editingName ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          placeholder="Enter display name"
+                          className="max-w-xs"
+                          maxLength={50}
+                        />
+                        <Button size="sm" onClick={saveDisplayName} disabled={savingName}>
+                          {savingName ? "Saving..." : "Save"}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => {
+                          setEditingName(false);
+                          setDisplayName(profile.display_name || '');
+                        }}>
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <h2 className="text-3xl font-bold text-foreground">
+                          {profile.display_name || user.email.split('@')[0]}
+                        </h2>
+                        {profile.featured_achievement && (
+                          <UserBadge achievementId={profile.featured_achievement} size="md" />
+                        )}
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => setEditingName(true)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </>
                     )}
                   </div>
+                  <p className="text-sm text-muted-foreground mb-3">{user.email}</p>
+                  
+                  {/* Follower Stats */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex items-center gap-1 text-sm">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-semibold text-foreground">{followersCount}</span>
+                      <span className="text-muted-foreground">Followers</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm">
+                      <span className="font-semibold text-foreground">{followingCount}</span>
+                      <span className="text-muted-foreground">Following</span>
+                    </div>
+                  </div>
+                  
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
