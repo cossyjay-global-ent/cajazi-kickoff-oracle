@@ -1,11 +1,12 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Trophy, Menu, Users } from "lucide-react";
+import { Trophy, Menu, Users, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
+import { Badge } from "@/components/ui/badge";
 import {
   Sheet,
   SheetContent,
@@ -171,6 +172,12 @@ export const Header = () => {
             {user ? (
               <>
                 <NotificationDropdown userId={user.id} />
+                {isAdmin && (
+                  <Badge variant="secondary" className="hidden sm:flex items-center gap-1 bg-primary/10 text-primary">
+                    <Shield className="h-3 w-3" />
+                    Admin
+                  </Badge>
+                )}
                 <span className="text-sm text-muted-foreground hidden sm:inline">
                   {user.email}
                 </span>
