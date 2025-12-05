@@ -1,10 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Trophy, Menu } from "lucide-react";
+import { Trophy, Menu, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
 import {
   Sheet,
   SheetContent,
@@ -149,6 +150,14 @@ export const Header = () => {
                 Leaderboard
               </Button>
             </Link>
+            {user && (
+              <Link to="/following">
+                <Button variant={isActive("/following") ? "default" : "ghost"} size="sm">
+                  <Users className="h-4 w-4 mr-1" />
+                  Following
+                </Button>
+              </Link>
+            )}
             {isAdmin && (
               <Link to="/admin">
                 <Button variant={isActive("/admin") ? "default" : "ghost"} size="sm">
@@ -161,6 +170,7 @@ export const Header = () => {
           <div className="flex items-center gap-2">
             {user ? (
               <>
+                <NotificationDropdown userId={user.id} />
                 <span className="text-sm text-muted-foreground hidden sm:inline">
                   {user.email}
                 </span>
@@ -238,6 +248,14 @@ export const Header = () => {
                       Leaderboard
                     </Button>
                   </Link>
+                  {user && (
+                    <Link to="/following" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant={isActive("/following") ? "default" : "ghost"} className="w-full justify-start">
+                        <Users className="h-4 w-4 mr-2" />
+                        Following Feed
+                      </Button>
+                    </Link>
+                  )}
                   {isAdmin && (
                     <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant={isActive("/admin") ? "default" : "ghost"} className="w-full justify-start">
@@ -250,7 +268,7 @@ export const Header = () => {
                     {user ? (
                       <Button 
                         variant="outline" 
-                        className="w-full" 
+                        className="w-full"
                         onClick={handleLogout}
                         disabled={loggingOut}
                       >

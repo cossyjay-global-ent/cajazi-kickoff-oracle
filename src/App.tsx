@@ -17,6 +17,7 @@ import Admin from "./pages/Admin";
 import About from "./pages/About";
 import History from "./pages/History";
 import Leaderboard from "./pages/Leaderboard";
+import Following from "./pages/Following";
 import NotFound from "./pages/NotFound";
 import { useRealtimePredictions } from "./hooks/useRealtimePredictions";
 
@@ -48,6 +49,7 @@ const App = () => {
               <Route path="/history" element={<History />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/user/:userId" element={<PublicProfile />} />
+              <Route path="/following" element={<Following />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
