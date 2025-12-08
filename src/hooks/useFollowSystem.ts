@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { sendNotificationEmail, getUserEmail } from "@/hooks/useEmailNotifications";
 
 export const useFollowSystem = (targetUserId: string | null, currentUserId: string | null) => {
   const [isFollowing, setIsFollowing] = useState(false);
@@ -78,6 +79,21 @@ export const useFollowSystem = (targetUserId: string | null, currentUserId: stri
         setIsFollowing(true);
         setFollowersCount(prev => prev + 1);
         toast.success("Following!");
+        
+        // Send email notification
+        const [targetUser, currentUser] = await Promise.all([
+          getUserEmail(targetUserId),
+          getUserEmail(currentUserId),
+        ]);
+        
+        if (targetUser && currentUser) {
+          sendNotificationEmail({
+            type: "new_follower",
+            recipientEmail: targetUser.email,
+            recipientName: targetUser.displayName,
+            actorName: currentUser.displayName,
+          });
+        }
       }
     }
 

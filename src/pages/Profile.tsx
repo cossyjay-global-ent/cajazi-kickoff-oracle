@@ -13,6 +13,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useAchievementNotifications } from "@/hooks/useAchievementNotifications";
 import { UserBadge, SEASONAL_ACHIEVEMENTS } from "@/components/UserBadge";
 import { useFollowSystem } from "@/hooks/useFollowSystem";
+import { RankBadge, getRankNextMilestone } from "@/components/RankBadge";
 
 interface UserProfile {
   id: string;
@@ -22,6 +23,8 @@ interface UserProfile {
   correct_predictions: number;
   created_at: string;
   featured_achievement: string | null;
+  xp_points: number;
+  rank_tier: string;
 }
 
 interface SeasonalAchievement {
@@ -583,6 +586,12 @@ export default function Profile() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <RankBadge 
+                      rankTier={profile.rank_tier || 'Bronze'} 
+                      xpPoints={profile.xp_points || 0} 
+                      size="md" 
+                      showXP={true}
+                    />
                     <Badge variant="secondary" className="text-sm">
                       {successRate}% Success Rate
                     </Badge>
@@ -593,11 +602,28 @@ export default function Profile() {
                       </Badge>
                     )}
                   </div>
+                  {/* Next Rank Progress */}
+                  {(() => {
+                    const nextMilestone = getRankNextMilestone(profile.xp_points || 0);
+                    if (nextMilestone) {
+                      return (
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          {nextMilestone.pointsNeeded} XP to {nextMilestone.nextRank}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6 pt-6 border-t border-border">
+                <div className="text-center p-4 bg-purple-500/10 rounded-lg">
+                  <Zap className="h-6 w-6 text-purple-500 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-purple-500">{profile.xp_points || 0}</div>
+                  <div className="text-xs text-muted-foreground">XP Points</div>
+                </div>
                 <div className="text-center p-4 bg-muted/30 rounded-lg">
                   <Eye className="h-6 w-6 text-primary mx-auto mb-2" />
                   <div className="text-2xl font-bold text-foreground">{profile.predictions_viewed}</div>

@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy, Medal, Crown, Star, Target, Award, TrendingUp, Eye, Heart, Users } from "lucide-react";
+import { Trophy, Medal, Crown, Star, Target, Award, TrendingUp, Eye, Heart, Users, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { UserBadge } from "@/components/UserBadge";
+import { RankBadge } from "@/components/RankBadge";
 
 interface LeaderboardUser {
   id: string;
@@ -18,6 +19,8 @@ interface LeaderboardUser {
   unlocked_badges: number;
   featured_achievement: string | null;
   rank: number;
+  xp_points: number;
+  rank_tier: string;
 }
 
 interface Achievement {
@@ -115,6 +118,8 @@ export default function Leaderboard() {
           unlocked_badges: unlockedBadges,
           featured_achievement: profile.featured_achievement || null,
           rank: index + 1,
+          xp_points: profile.xp_points || 0,
+          rank_tier: profile.rank_tier || 'Bronze',
         };
       })
     );
@@ -280,6 +285,7 @@ export default function Leaderboard() {
                               {user.featured_achievement && (
                                 <UserBadge achievementId={user.featured_achievement} size="sm" />
                               )}
+                              <RankBadge rankTier={user.rank_tier} xpPoints={user.xp_points} size="sm" />
                               {user.id === currentUserId && (
                                 <Badge variant="secondary" className="text-xs">You</Badge>
                               )}
@@ -336,6 +342,7 @@ export default function Leaderboard() {
                               {user.featured_achievement && (
                                 <UserBadge achievementId={user.featured_achievement} size="sm" />
                               )}
+                              <RankBadge rankTier={user.rank_tier} xpPoints={user.xp_points} size="sm" />
                               {user.id === currentUserId && (
                                 <Badge variant="secondary" className="text-xs">You</Badge>
                               )}

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useFollowSystem } from "@/hooks/useFollowSystem";
+import { RankBadge } from "@/components/RankBadge";
 
 interface PublicUserProfile {
   id: string;
@@ -18,6 +19,8 @@ interface PublicUserProfile {
   correct_predictions: number;
   created_at: string;
   featured_achievement: string | null;
+  xp_points: number;
+  rank_tier: string;
 }
 
 interface Achievement {
@@ -267,6 +270,16 @@ export default function PublicProfile() {
                     {profile.featured_achievement && (
                       <UserBadge achievementId={profile.featured_achievement} size="md" />
                     )}
+                  </div>
+                  
+                  {/* Rank Badge */}
+                  <div className="mb-3">
+                    <RankBadge 
+                      rankTier={(profile as any).rank_tier || 'Bronze'} 
+                      xpPoints={(profile as any).xp_points || 0} 
+                      size="md" 
+                      showXP={true}
+                    />
                   </div>
                   
                   {/* Follower Stats */}
