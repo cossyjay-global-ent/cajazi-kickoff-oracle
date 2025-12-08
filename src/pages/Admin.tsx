@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { PredictionBuilder, PredictionFormData } from "@/components/PredictionBuilder";
 import { SubscriptionManager } from "@/components/SubscriptionManager";
 import { z } from "zod";
+import { sendNotificationEmail, getUserEmail } from "@/hooks/useEmailNotifications";
 
 // Validation schema for predictions
 const predictionSchema = z.object({
@@ -257,6 +258,35 @@ export default function Admin() {
     } else {
       toast.success("Prediction bundle added successfully!");
       fetchBundles();
+      
+      // Send email notifications to followers for free predictions
+      if (predictionType === 'free') {
+        const { data: followers } = await supabase
+          .from('user_follows')
+          .select('follower_id')
+          .eq('following_id', user.id);
+        
+        if (followers && followers.length > 0) {
+          const adminInfo = await getUserEmail(user.id);
+          const predictionTitle = predictions[0] 
+            ? `${predictions[0].teamA} vs ${predictions[0].teamB}` 
+            : 'New Prediction';
+          
+          // Send emails to all followers (limit to first 10 for performance)
+          for (const follower of followers.slice(0, 10)) {
+            const followerInfo = await getUserEmail(follower.follower_id);
+            if (followerInfo && adminInfo) {
+              sendNotificationEmail({
+                type: "new_prediction",
+                recipientEmail: followerInfo.email,
+                recipientName: followerInfo.displayName,
+                actorName: adminInfo.displayName,
+                predictionTitle,
+              });
+            }
+          }
+        }
+      }
     }
   };
 

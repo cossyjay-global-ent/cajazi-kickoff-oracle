@@ -205,6 +205,8 @@ export type Database = {
           featured_achievement: string | null
           id: string
           predictions_viewed: number | null
+          rank_tier: string | null
+          xp_points: number | null
         }
         Insert: {
           correct_predictions?: number | null
@@ -214,6 +216,8 @@ export type Database = {
           featured_achievement?: string | null
           id: string
           predictions_viewed?: number | null
+          rank_tier?: string | null
+          xp_points?: number | null
         }
         Update: {
           correct_predictions?: number | null
@@ -223,6 +227,8 @@ export type Database = {
           featured_achievement?: string | null
           id?: string
           predictions_viewed?: number | null
+          rank_tier?: string | null
+          xp_points?: number | null
         }
         Relationships: []
       }
@@ -358,6 +364,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_ranks: {
+        Row: {
+          badge_color: string
+          created_at: string
+          id: string
+          max_points: number | null
+          min_points: number
+          name: string
+        }
+        Insert: {
+          badge_color: string
+          created_at?: string
+          id?: string
+          max_points?: number | null
+          min_points: number
+          name: string
+        }
+        Update: {
+          badge_color?: string
+          created_at?: string
+          id?: string
+          max_points?: number | null
+          min_points?: number
+          name?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -384,6 +417,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_xp_points: {
+        Args: { p_points: number; p_reason: string; p_user_id: string }
+        Returns: undefined
+      }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
     }
     Enums: {
