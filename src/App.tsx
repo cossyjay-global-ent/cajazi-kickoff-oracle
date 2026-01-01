@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Livescore from "./pages/Livescore";
@@ -18,6 +19,7 @@ import About from "./pages/About";
 import History from "./pages/History";
 import Leaderboard from "./pages/Leaderboard";
 import Following from "./pages/Following";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import { useRealtimePredictions } from "./hooks/useRealtimePredictions";
 
@@ -50,10 +52,12 @@ const App = () => {
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/user/:userId" element={<PublicProfile />} />
               <Route path="/following" element={<Following />} />
+              <Route path="/install" element={<Install />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           <Footer />
+          <InstallPrompt />
         </div>
       </BrowserRouter>
     </TooltipProvider>
