@@ -14,9 +14,11 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "robots.txt"],
+      registerType: "prompt",
+      injectRegister: null,
+      includeAssets: ["favicon.ico", "robots.txt", "apple-touch-icon.png"],
       manifest: {
+        id: "/",
         name: "Cajazi Prediction - Winning Starts Here",
         short_name: "Cajazi",
         description: "Your ultimate destination for accurate soccer match predictions. We combine statistical analysis with expert insights to give you the winning edge.",
@@ -70,6 +72,9 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -78,7 +83,7 @@ export default defineConfig(({ mode }) => ({
               cacheName: "google-fonts-cache",
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -92,7 +97,7 @@ export default defineConfig(({ mode }) => ({
               cacheName: "gstatic-fonts-cache",
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -107,7 +112,7 @@ export default defineConfig(({ mode }) => ({
               networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 5 // 5 minutes
+                maxAgeSeconds: 60 * 5
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -117,7 +122,8 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       devOptions: {
-        enabled: false
+        enabled: true,
+        type: "module"
       }
     })
   ].filter(Boolean),
