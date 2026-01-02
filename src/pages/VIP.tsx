@@ -63,6 +63,13 @@ export default function VIP() {
     }
   }, [user]);
 
+  // Auto-switch to predictions view when user has active subscription
+  useEffect(() => {
+    if (hasSubscription) {
+      setCurrentView("predictions");
+    }
+  }, [hasSubscription]);
+
   useEffect(() => {
     if (hasSubscription && currentView === "predictions") {
       fetchVIPBundles();
@@ -110,8 +117,6 @@ export default function VIP() {
     // Guard: Don't fetch if no subscription
     if (!hasSubscription) {
       setBundles([]);
-      toast.error("Active subscription required to view predictions");
-      setCurrentView("plans");
       return;
     }
 
