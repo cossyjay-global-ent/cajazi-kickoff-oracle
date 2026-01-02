@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PredictionCard } from "@/components/PredictionCard";
+import { Star, Crown } from "lucide-react";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [predictions, setPredictions] = useState<any[]>([]);
+  const [vipPredictions, setVipPredictions] = useState<any[]>([]);
+  const [hasSubscription, setHasSubscription] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,8 +32,29 @@ export default function Home() {
   useEffect(() => {
     if (user) {
       fetchFeaturedPredictions();
+      checkSubscription();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user && hasSubscription) {
+      fetchVipPredictions();
+    }
+  }, [user, hasSubscription]);
+
+  const checkSubscription = async () => {
+    if (!user) return;
+
+    const { data } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle();
+
+    setHasSubscription(!!data);
+  };
 
   const fetchFeaturedPredictions = async () => {
     const { data } = await supabase
@@ -42,6 +66,19 @@ export default function Home() {
 
     if (data) {
       setPredictions(data);
+    }
+  };
+
+  const fetchVipPredictions = async () => {
+    const { data } = await supabase
+      .from('predictions')
+      .select('*')
+      .eq('prediction_type', 'vip')
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (data) {
+      setVipPredictions(data);
     }
   };
 
@@ -62,8 +99,32 @@ export default function Home() {
           </p>
         </div>
 
+        {/* VIP Predictions Section - Only for subscribed users */}
+        {hasSubscription && vipPredictions.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Crown className="h-6 w-6 text-primary" />
+              <h3 className="text-2xl font-bold text-foreground">Your VIP Predictions</h3>
+            </div>
+            <div className="space-y-4">
+              {vipPredictions.map((pred) => (
+                <PredictionCard
+                  key={pred.id}
+                  match={pred.match_name}
+                  prediction={pred.prediction_text}
+                  odds={parseFloat(pred.odds)}
+                  confidence={pred.confidence}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="mb-6">
-          <h3 className="text-2xl font-bold text-foreground mb-4">Today's Featured Predictions</h3>
+          <div className="flex items-center gap-2 mb-4">
+            <Star className="h-6 w-6 text-muted-foreground" />
+            <h3 className="text-2xl font-bold text-foreground">Today's Featured Predictions</h3>
+          </div>
           <div className="space-y-4">
             {predictions.length > 0 ? (
               predictions.map((pred) => (
