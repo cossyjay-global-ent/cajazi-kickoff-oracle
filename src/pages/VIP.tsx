@@ -206,19 +206,20 @@ export default function VIP() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+          <div className="flex flex-col gap-4 mb-6 sm:mb-8">
             <div>
-              <h2 className="text-4xl font-bold text-foreground mb-2">VIP Predictions</h2>
-              <p className="text-muted-foreground">Exclusive premium betting insights</p>
+              <h2 className="text-2xl sm:text-4xl font-bold text-foreground mb-1 sm:mb-2">VIP Predictions</h2>
+              <p className="text-sm sm:text-base text-muted-foreground">Exclusive premium betting insights</p>
             </div>
             
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <Button
                 variant={currentView === "plans" ? "default" : "outline"}
                 onClick={() => setCurrentView("plans")}
-                className="shadow-sm"
+                className="shadow-sm text-sm"
+                size="sm"
               >
                 Plans
               </Button>
@@ -233,7 +234,8 @@ export default function VIP() {
                   setCurrentView("predictions");
                 }}
                 disabled={!hasSubscription}
-                className="shadow-sm"
+                className="shadow-sm text-sm"
+                size="sm"
               >
                 My Predictions
               </Button>
@@ -243,16 +245,17 @@ export default function VIP() {
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
+                      size="sm"
                       className={cn(
-                        "w-full sm:w-[240px] justify-start text-left font-normal shadow-sm",
+                        "w-full sm:w-auto justify-start text-left font-normal shadow-sm text-sm",
                         !selectedDate && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                      {selectedDate ? format(selectedDate, "PP") : <span>Pick date</span>}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-card" align="end">
+                  <PopoverContent className="w-auto p-0 bg-card" align="start">
                     <Calendar
                       mode="single"
                       selected={selectedDate}
@@ -267,24 +270,25 @@ export default function VIP() {
           </div>
 
         {currentView === "plans" ? (
-          <div className="bg-card/80 backdrop-blur border border-border rounded-xl shadow-lg p-8">
+          <div className="bg-card/80 backdrop-blur border border-border rounded-xl shadow-lg p-4 sm:p-8">
             <div className="text-center">
-              <Star className="h-20 w-20 text-primary mx-auto mb-4" />
-              <h3 className="text-3xl font-bold text-foreground mb-3">Go Premium with VIP</h3>
-              <p className="text-muted-foreground text-lg mb-10">
+              <Star className="h-12 w-12 sm:h-20 sm:w-20 text-primary mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-xl sm:text-3xl font-bold text-foreground mb-2 sm:mb-3">Go Premium with VIP</h3>
+              <p className="text-sm sm:text-lg text-muted-foreground mb-6 sm:mb-10">
                 Subscribe now to access our highest accuracy predictions and exclusive content.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
                 {plans.map((plan) => (
                   <div
                     key={plan.name}
-                    className="bg-background/60 backdrop-blur border-2 border-border rounded-xl p-6 hover:border-primary hover:shadow-xl transition-all duration-300"
+                    className="bg-background/60 backdrop-blur border-2 border-border rounded-xl p-3 sm:p-6 hover:border-primary hover:shadow-xl transition-all duration-300"
                   >
-                    <h4 className="text-xl font-bold text-foreground mb-3">{plan.name}</h4>
-                    <p className="text-4xl font-bold text-primary mb-6">{plan.price}</p>
+                    <h4 className="text-sm sm:text-xl font-bold text-foreground mb-1 sm:mb-3">{plan.name}</h4>
+                    <p className="text-xl sm:text-4xl font-bold text-primary mb-3 sm:mb-6">{plan.price}</p>
                     <Button
-                      className="w-full shadow-md"
+                      className="w-full shadow-md text-xs sm:text-sm"
+                      size="sm"
                       onClick={() => window.open(plan.paymentLink, '_blank')}
                     >
                       Select Plan
@@ -295,13 +299,13 @@ export default function VIP() {
             </div>
           </div>
         ) : !hasSubscription ? (
-          <div className="bg-card/80 backdrop-blur border border-border rounded-xl shadow-lg p-12 text-center">
-            <Star className="h-20 w-20 text-muted-foreground mx-auto mb-6" />
-            <h3 className="text-3xl font-bold text-foreground mb-3">Subscription Required</h3>
-            <p className="text-muted-foreground text-lg mb-8">
+          <div className="bg-card/80 backdrop-blur border border-border rounded-xl shadow-lg p-6 sm:p-12 text-center">
+            <Star className="h-12 w-12 sm:h-20 sm:w-20 text-muted-foreground mx-auto mb-4 sm:mb-6" />
+            <h3 className="text-xl sm:text-3xl font-bold text-foreground mb-2 sm:mb-3">Subscription Required</h3>
+            <p className="text-sm sm:text-lg text-muted-foreground mb-6 sm:mb-8">
               You need an active VIP subscription to access predictions. Please subscribe to a plan and wait for admin confirmation after payment.
             </p>
-            <Button size="lg" onClick={() => setCurrentView("plans")} className="shadow-md">
+            <Button size="default" onClick={() => setCurrentView("plans")} className="shadow-md">
               View Plans
             </Button>
           </div>
@@ -387,38 +391,39 @@ export default function VIP() {
                 filteredBundles.map((bundle) => (
                 <div
                   key={bundle.id}
-                  className="p-8 bg-card/80 backdrop-blur border border-border rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="p-4 sm:p-8 bg-card/80 backdrop-blur border border-border rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   {/* Bundle Header */}
-                  <div className="mb-6 pb-6 border-b-2 border-border">
+                  <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b-2 border-border">
                     {bundle.booking_code && (
-                      <div className="mb-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                        <span className="text-muted-foreground text-sm">Booking Code: </span>
-                        <span className="font-mono font-bold text-primary text-2xl">{bundle.booking_code}</span>
-                        <span className="text-muted-foreground ml-3 text-sm">on</span>
-                        <span className="font-semibold text-foreground ml-2">{bundle.betting_platform || 'football.com'}</span>
+                      <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-primary/5 rounded-lg border border-primary/20">
+                        <span className="text-muted-foreground text-xs sm:text-sm">Code: </span>
+                        <span className="font-mono font-bold text-primary text-lg sm:text-2xl">{bundle.booking_code}</span>
+                        <span className="text-muted-foreground ml-2 sm:ml-3 text-xs sm:text-sm">on</span>
+                        <span className="font-semibold text-foreground ml-1 sm:ml-2 text-sm">{bundle.betting_platform || 'football.com'}</span>
                       </div>
                     )}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="font-bold text-foreground text-2xl">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2 sm:mb-3">
+                      <div className="font-bold text-foreground text-lg sm:text-2xl">
                         Package #{bundle.id.slice(0, 8)}
                       </div>
-                      <span className="px-4 py-2 bg-gradient-to-r from-primary to-primary-glow text-primary-foreground rounded-full font-bold text-sm shadow-md">🔒 VIP</span>
+                      <span className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-primary to-primary-glow text-primary-foreground rounded-full font-bold text-xs sm:text-sm shadow-md">🔒 VIP</span>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      Created: {new Date(bundle.created_at).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
+                    <div className="text-xs sm:text-sm text-muted-foreground">
+                      {new Date(bundle.created_at).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        year: 'numeric'
                       })}
                     </div>
                   </div>
                   
                   {/* Fixture List & Results */}
-                  <div className="mb-6">
-                    <h4 className="font-bold text-foreground text-lg mb-4">Fixture List & Results</h4>
-                    <div className="overflow-x-auto rounded-lg border border-border">
+                  <div className="mb-4 sm:mb-6">
+                    <h4 className="font-bold text-foreground text-sm sm:text-lg mb-3 sm:mb-4">Fixture List & Results</h4>
+                    
+                    {/* Desktop Table */}
+                    <div className="hidden sm:block overflow-x-auto rounded-lg border border-border">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="bg-muted/50 border-b-2 border-border">
@@ -441,46 +446,69 @@ export default function VIP() {
                               <td className="py-4 px-4 text-foreground font-bold text-base">
                                 {parseFloat(pred.odds).toFixed(2)}
                               </td>
-                          <td className="py-3 px-2">
-                            <span className={cn(
-                              "px-4 py-1.5 rounded-full font-bold text-xs uppercase tracking-wide inline-block min-w-[80px] text-center",
-                              pred.result === 'won' 
-                                ? 'bg-status-won text-status-won-foreground shadow-sm' 
-                                : pred.result === 'lost'
-                                ? 'bg-status-lost text-status-lost-foreground shadow-sm'
-                                : 'bg-status-pending text-status-pending-foreground shadow-sm'
-                            )}>
-                              {pred.result?.toUpperCase() || 'PENDING'}
-                            </span>
-                          </td>
+                              <td className="py-3 px-2">
+                                <span className={cn(
+                                  "px-4 py-1.5 rounded-full font-bold text-xs uppercase tracking-wide inline-block min-w-[80px] text-center",
+                                  pred.result === 'won' 
+                                    ? 'bg-status-won text-status-won-foreground shadow-sm' 
+                                    : pred.result === 'lost'
+                                    ? 'bg-status-lost text-status-lost-foreground shadow-sm'
+                                    : 'bg-status-pending text-status-pending-foreground shadow-sm'
+                                )}>
+                                  {pred.result?.toUpperCase() || 'PENDING'}
+                                </span>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
+
+                    {/* Mobile Card View */}
+                    <div className="sm:hidden space-y-3">
+                      {bundle.predictions?.map((pred: any) => (
+                        <div key={pred.id} className="p-3 bg-muted/50 rounded-lg border border-border">
+                          <div className="font-medium text-foreground text-sm mb-2">{pred.match_name}</div>
+                          <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
+                            <span className="text-muted-foreground">⚽ {pred.prediction_text}</span>
+                            <span className="font-semibold text-primary">@ {parseFloat(pred.odds).toFixed(2)}</span>
+                          </div>
+                          <span className={cn(
+                            "px-3 py-1 rounded-full font-bold text-xs uppercase inline-block",
+                            pred.result === 'won' 
+                              ? 'bg-status-won text-status-won-foreground' 
+                              : pred.result === 'lost'
+                              ? 'bg-status-lost text-status-lost-foreground'
+                              : 'bg-status-pending text-status-pending-foreground'
+                          )}>
+                            {pred.result?.toUpperCase() || 'PENDING'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   
                   {/* Package Summary */}
-                  <div className="pt-6 border-t-2 border-border bg-muted/30 -mx-8 -mb-8 px-8 py-6 rounded-b-xl">
-                    <h4 className="font-bold text-foreground text-lg mb-4">Package Summary</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 bg-card rounded-lg border border-border">
-                        <span className="text-sm text-muted-foreground block mb-1">Total Combined Odds</span>
-                        <span className="text-3xl font-bold text-primary">
+                  <div className="pt-4 sm:pt-6 border-t-2 border-border bg-muted/30 -mx-4 sm:-mx-8 -mb-4 sm:-mb-8 px-4 sm:px-8 py-4 sm:py-6 rounded-b-xl">
+                    <h4 className="font-bold text-foreground text-sm sm:text-lg mb-3 sm:mb-4">Package Summary</h4>
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                      <div className="p-3 sm:p-4 bg-card rounded-lg border border-border">
+                        <span className="text-xs sm:text-sm text-muted-foreground block mb-1">Total Odds</span>
+                        <span className="text-xl sm:text-3xl font-bold text-primary">
                           {parseFloat(bundle.total_odds).toFixed(2)}
                         </span>
                       </div>
-                      <div className="p-4 bg-card rounded-lg border border-border">
-                        <span className="text-sm text-muted-foreground block mb-2">Final Package Status</span>
-                      <span className={cn(
-                        "px-5 py-2 rounded-full font-bold text-sm uppercase tracking-wide inline-block",
-                        bundle.final_status === 'won' 
-                          ? 'bg-status-won text-status-won-foreground shadow-md' 
-                          : bundle.final_status === 'lost'
-                          ? 'bg-status-lost text-status-lost-foreground shadow-md'
-                          : 'bg-status-pending text-status-pending-foreground shadow-md'
-                      )}>
-                        {bundle.final_status?.toUpperCase() || 'PENDING'}
+                      <div className="p-3 sm:p-4 bg-card rounded-lg border border-border">
+                        <span className="text-xs sm:text-sm text-muted-foreground block mb-1 sm:mb-2">Status</span>
+                        <span className={cn(
+                          "px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-bold text-xs uppercase tracking-wide inline-block",
+                          bundle.final_status === 'won' 
+                            ? 'bg-status-won text-status-won-foreground shadow-md' 
+                            : bundle.final_status === 'lost'
+                            ? 'bg-status-lost text-status-lost-foreground shadow-md'
+                            : 'bg-status-pending text-status-pending-foreground shadow-md'
+                        )}>
+                          {bundle.final_status?.toUpperCase() || 'PENDING'}
                         </span>
                       </div>
                     </div>
