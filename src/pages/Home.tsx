@@ -87,13 +87,13 @@ export default function Home() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
             Welcome to Cajazi Prediction
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Your ultimate destination for accurate soccer match predictions. We combine statistical
             analysis with expert insights to give you the winning edge.
           </p>
@@ -101,12 +101,12 @@ export default function Home() {
 
         {/* VIP Predictions Section - Only for subscribed users */}
         {hasSubscription && vipPredictions.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <Crown className="h-6 w-6 text-primary" />
-              <h3 className="text-2xl font-bold text-foreground">Your VIP Predictions</h3>
+          <div className="mb-6 sm:mb-8">
+            <div className="flex items-center gap-2 mb-3 sm:mb-4">
+              <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              <h3 className="text-xl sm:text-2xl font-bold text-foreground">Your VIP Predictions</h3>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {vipPredictions.map((pred) => (
                 <PredictionCard
                   key={pred.id}
@@ -120,12 +120,12 @@ export default function Home() {
           </div>
         )}
 
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Star className="h-6 w-6 text-muted-foreground" />
-            <h3 className="text-2xl font-bold text-foreground">Today's Featured Predictions</h3>
+        <div className="mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <Star className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
+            <h3 className="text-xl sm:text-2xl font-bold text-foreground">Today's Featured Predictions</h3>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {predictions.length > 0 ? (
               predictions.map((pred) => (
                 <PredictionCard

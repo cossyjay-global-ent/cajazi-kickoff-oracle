@@ -130,9 +130,9 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="odds">Odds</Label>
+              <Label htmlFor="odds" className="text-sm">Odds</Label>
               <Input
                 id="odds"
                 type="number"
@@ -140,11 +140,12 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
                 value={odds}
                 onChange={(e) => setOdds(e.target.value)}
                 placeholder="e.g., 2.00"
+                className="text-sm"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confidence">Confidence (0-100)</Label>
+              <Label htmlFor="confidence" className="text-sm">Confidence (0-100)</Label>
               <Input
                 id="confidence"
                 type="number"
@@ -153,19 +154,20 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
                 value={confidence}
                 onChange={(e) => setConfidence(e.target.value)}
                 placeholder="e.g., 85"
+                className="text-sm"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Match Date</Label>
+              <Label className="text-sm">Match Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal text-sm",
                       !matchDate && "text-muted-foreground"
                     )}
                   >
@@ -186,9 +188,9 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sport">Sport Category</Label>
+              <Label htmlFor="sport" className="text-sm">Sport Category</Label>
               <Select value={sportCategory} onValueChange={setSportCategory}>
-                <SelectTrigger>
+                <SelectTrigger className="text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -214,11 +216,11 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
       </div>
 
       {/* Current Predictions Preview - Right Side */}
-      <div className="bg-card border border-border rounded-lg p-6">
+      <div className="bg-card border border-border rounded-lg p-4 sm:p-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-foreground">Current Predictions</h3>
+          <h3 className="text-lg sm:text-xl font-bold text-foreground">Current Predictions</h3>
           {predictions.length > 0 && (
-            <Button onClick={clearAll} variant="outline" size="sm">
+            <Button onClick={clearAll} variant="outline" size="sm" className="text-xs">
               Clear All
             </Button>
           )}

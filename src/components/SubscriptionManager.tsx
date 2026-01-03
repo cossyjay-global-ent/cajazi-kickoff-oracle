@@ -8,9 +8,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, AlertTriangle, CheckCircle, Clock, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface UserWithSubscription {
   id: string;
@@ -24,13 +26,24 @@ interface UserWithSubscription {
   } | null;
 }
 
+interface OrphanedSubscription {
+  id: string;
+  user_id: string;
+  plan_type: string;
+  status: string;
+  started_at: string;
+  expires_at: string;
+}
+
 export const SubscriptionManager = () => {
   const [users, setUsers] = useState<UserWithSubscription[]>([]);
+  const [orphanedSubscriptions, setOrphanedSubscriptions] = useState<OrphanedSubscription[]>([]);
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [planType, setPlanType] = useState<string>("2_weeks");
   const [expiresAt, setExpiresAt] = useState<Date>();
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   useEffect(() => {
     fetchUsersWithSubscriptions();
@@ -45,24 +58,51 @@ export const SubscriptionManager = () => {
 
     if (!profiles) return;
 
-    // Fetch all active subscriptions
+    // Fetch ALL subscriptions (not just active)
     const { data: subscriptions } = await supabase
       .from('subscriptions')
       .select('*')
-      .eq('status', 'active')
-      .gt('expires_at', new Date().toISOString());
+      .order('created_at', { ascending: false });
 
     // Map subscriptions to users
     const usersWithSubs: UserWithSubscription[] = profiles.map(profile => {
-      const sub = subscriptions?.find(s => s.user_id === profile.id);
+      // Find most recent active subscription for this user
+      const sub = subscriptions?.find(s => 
+        s.user_id === profile.id && 
+        s.status === 'active' && 
+        new Date(s.expires_at) > new Date()
+      );
       return {
         ...profile,
         subscription: sub || null
       };
     });
 
+    // Find orphaned subscriptions (subscriptions without matching profiles)
+    const profileIds = profiles.map(p => p.id);
+    const orphaned = subscriptions?.filter(s => !profileIds.includes(s.user_id)) || [];
+    setOrphanedSubscriptions(orphaned);
+
     setUsers(usersWithSubs);
   };
+
+  const getSubscriptionStatus = (subscription: { status: string; expires_at: string } | null | undefined) => {
+    if (!subscription) return 'none';
+    const now = new Date();
+    const expiresAt = new Date(subscription.expires_at);
+    if (subscription.status !== 'active') return 'expired';
+    if (expiresAt < now) return 'expired';
+    return 'active';
+  };
+
+  const filteredUsers = users.filter(user => {
+    if (filterStatus === 'all') return true;
+    const status = getSubscriptionStatus(user.subscription);
+    if (filterStatus === 'active') return status === 'active';
+    if (filterStatus === 'none') return status === 'none';
+    if (filterStatus === 'expired') return status === 'expired';
+    return true;
+  });
 
   const calculateExpiryDate = (planType: string): Date => {
     const now = new Date();
@@ -160,14 +200,14 @@ export const SubscriptionManager = () => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold text-foreground">VIP Subscription Management</h3>
+    <div className="bg-card border border-border rounded-lg p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+        <h3 className="text-lg sm:text-xl font-bold text-foreground">VIP Subscription Management</h3>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>Activate Subscription</Button>
+            <Button size="sm" className="w-full sm:w-auto">Activate Subscription</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-[95vw] sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Activate VIP Subscription</DialogTitle>
             </DialogHeader>
@@ -178,10 +218,13 @@ export const SubscriptionManager = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Choose a user" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-60">
                     {users.map((user) => (
                       <SelectItem key={user.id} value={user.id}>
-                        {user.email} {user.subscription ? "(Has Active Sub)" : ""}
+                        <span className="truncate max-w-[200px] inline-block">
+                          {user.email}
+                        </span>
+                        {user.subscription && <Badge variant="secondary" className="ml-2 text-xs">Active</Badge>}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -247,56 +290,139 @@ export const SubscriptionManager = () => {
         </Dialog>
       </div>
 
-      <div className="space-y-3">
-        {users.length === 0 ? (
-          <p className="text-muted-foreground text-center py-4">No users found</p>
-        ) : (
-          users.map((user) => (
-            <div
-              key={user.id}
-              className="flex justify-between items-center p-4 bg-background border border-border rounded-lg"
+      {/* Filter Section */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <Label className="text-sm text-muted-foreground w-full mb-1">Filter by status:</Label>
+        <div className="flex flex-wrap gap-2">
+          {['all', 'active', 'none', 'expired'].map((status) => (
+            <Button
+              key={status}
+              variant={filterStatus === status ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilterStatus(status)}
+              className="text-xs capitalize"
             >
-              <div className="flex-1">
-                <div className="font-semibold text-foreground">{user.email}</div>
-                {user.subscription ? (
-                  <div className="text-sm space-y-1 mt-1">
-                    <div className="text-muted-foreground">
-                      <span className="text-green-600 dark:text-green-400 font-semibold">● Active VIP</span>
-                      {" • "}
-                      <span className="capitalize">{user.subscription.plan_type.replace('_', ' ')}</span>
-                    </div>
-                    <div className="text-muted-foreground">
-                      Expires: {new Date(user.subscription.expires_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground mt-1">
-                    No active subscription
-                  </div>
-                )}
-              </div>
+              {status === 'none' ? 'No Subscription' : status}
+            </Button>
+          ))}
+        </div>
+      </div>
 
-              {user.subscription && (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleExtendSubscription(user.subscription!.id, user.subscription!.expires_at)}
-                  >
-                    Extend +1mo
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleExpireSubscription(user.subscription!.id)}
-                  >
-                    Expire
-                  </Button>
-                </div>
-              )}
+      {/* Orphaned Subscriptions Warning */}
+      {orphanedSubscriptions.length > 0 && (
+        <div className="mb-4 p-3 sm:p-4 bg-warning/10 border border-warning/30 rounded-lg">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-foreground text-sm">Orphaned Subscriptions Found</h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                These subscriptions have no matching registered user. The user may not have signed up yet.
+              </p>
+              <div className="mt-2 space-y-2">
+                {orphanedSubscriptions.map((sub) => (
+                  <div key={sub.id} className="text-xs p-2 bg-background rounded border border-border">
+                    <div className="font-mono text-muted-foreground truncate">User ID: {sub.user_id.slice(0, 8)}...</div>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      <Badge variant="outline" className="text-xs">{sub.plan_type.replace('_', ' ')}</Badge>
+                      <Badge variant={sub.status === 'active' ? "default" : "secondary"} className="text-xs">
+                        {sub.status}
+                      </Badge>
+                      <span className="text-muted-foreground">
+                        Expires: {format(new Date(sub.expires_at), "PP")}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))
-        )}
+          </div>
+        </div>
+      )}
+
+      {/* User List */}
+      <ScrollArea className="h-[400px] sm:h-[500px]">
+        <div className="space-y-3 pr-2">
+          {filteredUsers.length === 0 ? (
+            <p className="text-muted-foreground text-center py-4 text-sm">
+              {filterStatus === 'all' ? 'No users found' : `No users with ${filterStatus} status`}
+            </p>
+          ) : (
+            filteredUsers.map((user) => {
+              const status = getSubscriptionStatus(user.subscription);
+              return (
+                <div
+                  key={user.id}
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 sm:p-4 bg-background border border-border rounded-lg"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-foreground text-sm sm:text-base truncate">{user.email}</div>
+                    {user.subscription ? (
+                      <div className="text-xs sm:text-sm space-y-1 mt-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {status === 'active' ? (
+                            <Badge variant="default" className="bg-success text-success-foreground text-xs">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Active VIP
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-destructive/10 text-destructive text-xs">
+                              <XCircle className="h-3 w-3 mr-1" />
+                              Expired
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="capitalize text-xs">
+                            {user.subscription.plan_type.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          Expires: {format(new Date(user.subscription.expires_at), "PPP")}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs sm:text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                        <span className="text-muted-foreground">●</span> No active subscription
+                      </div>
+                    )}
+                  </div>
+
+                  {user.subscription && status === 'active' && (
+                    <div className="flex gap-2 self-end sm:self-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => handleExtendSubscription(user.subscription!.id, user.subscription!.expires_at)}
+                      >
+                        +1 Month
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => handleExpireSubscription(user.subscription!.id)}
+                      >
+                        Expire
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </ScrollArea>
+
+      {/* Summary */}
+      <div className="mt-4 pt-4 border-t border-border">
+        <div className="flex flex-wrap gap-4 text-xs sm:text-sm text-muted-foreground">
+          <span>Total Users: <strong className="text-foreground">{users.length}</strong></span>
+          <span>Active Subs: <strong className="text-success">{users.filter(u => getSubscriptionStatus(u.subscription) === 'active').length}</strong></span>
+          <span>No Sub: <strong className="text-foreground">{users.filter(u => getSubscriptionStatus(u.subscription) === 'none').length}</strong></span>
+          {orphanedSubscriptions.length > 0 && (
+            <span>Orphaned: <strong className="text-warning">{orphanedSubscriptions.length}</strong></span>
+          )}
+        </div>
       </div>
     </div>
   );

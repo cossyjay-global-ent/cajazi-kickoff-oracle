@@ -115,29 +115,30 @@ export default function Predictions() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="max-w-6xl mx-auto">
-          <div className="mb-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <div className="mb-6 sm:mb-8">
+            <div className="flex flex-col gap-4 mb-4 sm:mb-6">
               <div>
-                <h2 className="text-4xl font-bold text-foreground mb-2">Free Predictions</h2>
-                <p className="text-muted-foreground">Daily expert football betting tips</p>
+                <h2 className="text-2xl sm:text-4xl font-bold text-foreground mb-1 sm:mb-2">Free Predictions</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">Daily expert football betting tips</p>
               </div>
             
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
+                    size="sm"
                     className={cn(
-                      "w-full sm:w-[240px] justify-start text-left font-normal shadow-sm",
+                      "w-full sm:w-auto sm:max-w-[240px] justify-start text-left font-normal shadow-sm text-sm",
                       !selectedDate && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                    {selectedDate ? format(selectedDate, "PP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-card" align="end">
+                <PopoverContent className="w-auto p-0 bg-card" align="start">
                   <Calendar
                     mode="single"
                     selected={selectedDate}
@@ -150,17 +151,17 @@ export default function Predictions() {
             </div>
 
             {/* Filter Bar */}
-            <div className="bg-card/80 backdrop-blur border border-border rounded-xl p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
+            <div className="bg-card/80 backdrop-blur border border-border rounded-xl p-3 sm:p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-3 sm:mb-4">
                 <Filter className="h-4 w-4 text-primary" />
-                <h3 className="font-semibold text-foreground">Filters</h3>
+                <h3 className="font-semibold text-foreground text-sm">Filters</h3>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div>
-                  <Label htmlFor="status-filter" className="text-sm text-muted-foreground mb-2 block">Status</Label>
+                  <Label htmlFor="status-filter" className="text-xs sm:text-sm text-muted-foreground mb-1 sm:mb-2 block">Status</Label>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger id="status-filter" className="bg-background">
-                      <SelectValue placeholder="All statuses" />
+                    <SelectTrigger id="status-filter" className="bg-background text-sm">
+                      <SelectValue placeholder="All" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Statuses</SelectItem>
@@ -172,48 +173,49 @@ export default function Predictions() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="min-odds" className="text-sm text-muted-foreground mb-2 block">Min Odds</Label>
+                  <Label htmlFor="min-odds" className="text-xs sm:text-sm text-muted-foreground mb-1 sm:mb-2 block">Min Odds</Label>
                   <Input
                     id="min-odds"
                     type="number"
                     step="0.01"
-                    placeholder="e.g., 1.50"
+                    placeholder="1.50"
                     value={minOdds}
                     onChange={(e) => setMinOdds(e.target.value)}
-                    className="bg-background"
+                    className="bg-background text-sm"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="max-odds" className="text-sm text-muted-foreground mb-2 block">Max Odds</Label>
+                  <Label htmlFor="max-odds" className="text-xs sm:text-sm text-muted-foreground mb-1 sm:mb-2 block">Max Odds</Label>
                   <Input
                     id="max-odds"
                     type="number"
                     step="0.01"
-                    placeholder="e.g., 10.00"
+                    placeholder="10.00"
                     value={maxOdds}
                     onChange={(e) => setMaxOdds(e.target.value)}
-                    className="bg-background"
+                    className="bg-background text-sm"
                   />
                 </div>
 
-                <div className="flex items-end">
+                <div className="flex items-end col-span-2 sm:col-span-1">
                   <Button 
                     variant="outline" 
                     onClick={resetFilters}
-                    className="w-full"
+                    className="w-full text-sm"
+                    size="sm"
                   >
-                    Reset Filters
+                    Reset
                   </Button>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {filteredBundles.length === 0 ? (
-              <div className="text-center py-16 bg-card/50 backdrop-blur border border-border rounded-xl shadow-lg">
-                <p className="text-muted-foreground text-lg">
+              <div className="text-center py-10 sm:py-16 bg-card/50 backdrop-blur border border-border rounded-xl shadow-lg">
+                <p className="text-muted-foreground text-sm sm:text-lg">
                   {bundles.length === 0 
                     ? "No prediction packages available for this date." 
                     : "No predictions match your filters. Try adjusting the filter criteria."}
@@ -223,38 +225,39 @@ export default function Predictions() {
               filteredBundles.map((bundle) => (
                 <div
                   key={bundle.id}
-                  className="p-8 bg-card/80 backdrop-blur border border-border rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="p-4 sm:p-8 bg-card/80 backdrop-blur border border-border rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   {/* Bundle Header */}
-                  <div className="mb-6 pb-6 border-b-2 border-border">
+                  <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b-2 border-border">
                     {bundle.booking_code && (
-                      <div className="mb-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                        <span className="text-muted-foreground text-sm">Booking Code: </span>
-                        <span className="font-mono font-bold text-primary text-2xl">{bundle.booking_code}</span>
-                        <span className="text-muted-foreground ml-3 text-sm">on</span>
-                        <span className="font-semibold text-foreground ml-2">{bundle.betting_platform || 'football.com'}</span>
+                      <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-primary/5 rounded-lg border border-primary/20">
+                        <span className="text-muted-foreground text-xs sm:text-sm">Code: </span>
+                        <span className="font-mono font-bold text-primary text-lg sm:text-2xl">{bundle.booking_code}</span>
+                        <span className="text-muted-foreground ml-2 sm:ml-3 text-xs sm:text-sm">on</span>
+                        <span className="font-semibold text-foreground ml-1 sm:ml-2 text-sm">{bundle.betting_platform || 'football.com'}</span>
                       </div>
                     )}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="font-bold text-foreground text-2xl">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2 sm:mb-3">
+                      <div className="font-bold text-foreground text-lg sm:text-2xl">
                         Package #{bundle.id.slice(0, 8)}
                       </div>
-                      <span className="px-4 py-2 bg-primary/10 text-primary rounded-full font-bold text-sm">🆓 FREE</span>
+                      <span className="px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/10 text-primary rounded-full font-bold text-xs sm:text-sm">🆓 FREE</span>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      Created: {new Date(bundle.created_at).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
+                    <div className="text-xs sm:text-sm text-muted-foreground">
+                      {new Date(bundle.created_at).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        year: 'numeric' 
                       })}
                     </div>
                   </div>
                 
                   {/* Fixture List & Results */}
-                  <div className="mb-6">
-                    <h4 className="font-bold text-foreground text-lg mb-4">Fixture List & Results</h4>
-                    <div className="overflow-x-auto rounded-lg border border-border">
+                  <div className="mb-4 sm:mb-6">
+                    <h4 className="font-bold text-foreground text-sm sm:text-lg mb-3 sm:mb-4">Fixture List & Results</h4>
+                    
+                    {/* Desktop Table */}
+                    <div className="hidden sm:block overflow-x-auto rounded-lg border border-border">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="bg-muted/50 border-b-2 border-border">
@@ -294,22 +297,45 @@ export default function Predictions() {
                         </tbody>
                       </table>
                     </div>
+
+                    {/* Mobile Card View */}
+                    <div className="sm:hidden space-y-3">
+                      {bundle.predictions?.map((pred: any) => (
+                        <div key={pred.id} className="p-3 bg-muted/50 rounded-lg border border-border">
+                          <div className="font-medium text-foreground text-sm mb-2">{pred.match_name}</div>
+                          <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
+                            <span className="text-muted-foreground">⚽ {pred.prediction_text}</span>
+                            <span className="font-semibold text-primary">@ {parseFloat(pred.odds).toFixed(2)}</span>
+                          </div>
+                          <span className={cn(
+                            "px-3 py-1 rounded-full font-bold text-xs uppercase inline-block",
+                            pred.result === 'won' 
+                              ? 'bg-status-won text-status-won-foreground' 
+                              : pred.result === 'lost'
+                              ? 'bg-status-lost text-status-lost-foreground'
+                              : 'bg-status-pending text-status-pending-foreground'
+                          )}>
+                            {pred.result?.toUpperCase() || 'PENDING'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 
                   {/* Package Summary */}
-                  <div className="pt-6 border-t-2 border-border bg-muted/30 -mx-8 -mb-8 px-8 py-6 rounded-b-xl">
-                    <h4 className="font-bold text-foreground text-lg mb-4">Package Summary</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 bg-card rounded-lg border border-border">
-                        <span className="text-sm text-muted-foreground block mb-1">Total Combined Odds</span>
-                        <span className="text-3xl font-bold text-primary">
+                  <div className="pt-4 sm:pt-6 border-t-2 border-border bg-muted/30 -mx-4 sm:-mx-8 -mb-4 sm:-mb-8 px-4 sm:px-8 py-4 sm:py-6 rounded-b-xl">
+                    <h4 className="font-bold text-foreground text-sm sm:text-lg mb-3 sm:mb-4">Package Summary</h4>
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                      <div className="p-3 sm:p-4 bg-card rounded-lg border border-border">
+                        <span className="text-xs sm:text-sm text-muted-foreground block mb-1">Total Odds</span>
+                        <span className="text-xl sm:text-3xl font-bold text-primary">
                           {parseFloat(bundle.total_odds).toFixed(2)}
                         </span>
                       </div>
-                      <div className="p-4 bg-card rounded-lg border border-border">
-                        <span className="text-sm text-muted-foreground block mb-2">Final Package Status</span>
+                      <div className="p-3 sm:p-4 bg-card rounded-lg border border-border">
+                        <span className="text-xs sm:text-sm text-muted-foreground block mb-1 sm:mb-2">Status</span>
                         <span className={cn(
-                          "px-5 py-2 rounded-full font-bold text-sm uppercase tracking-wide inline-block",
+                          "px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-bold text-xs uppercase tracking-wide inline-block",
                           bundle.final_status === 'won' 
                             ? 'bg-status-won text-status-won-foreground shadow-md' 
                             : bundle.final_status === 'lost'

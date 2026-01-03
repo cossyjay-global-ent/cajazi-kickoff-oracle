@@ -303,75 +303,68 @@ export default function Admin() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold text-foreground mb-6">Admin Panel</h2>
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+      <div className="max-w-6xl mx-auto">
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6">Admin Panel</h2>
 
-        <PredictionBuilder onSubmit={handleAddPredictions} />
+        <div className="mb-6">
+          <PredictionBuilder onSubmit={handleAddPredictions} />
+        </div>
 
         <div className="mb-6">
           <SubscriptionManager />
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-6 mb-6">
-          <h3 className="text-xl font-bold text-foreground mb-4">Manage Prediction Bundles</h3>
-          <div className="space-y-6">
+        <div className="bg-card border border-border rounded-lg p-4 sm:p-6 mb-6">
+          <h3 className="text-lg sm:text-xl font-bold text-foreground mb-4">Manage Prediction Bundles</h3>
+          <div className="space-y-4 sm:space-y-6">
             {bundles.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">No prediction bundles yet</p>
+              <p className="text-muted-foreground text-center py-4 text-sm">No prediction bundles yet</p>
             ) : (
               bundles.map((bundle) => (
                 <div
                   key={bundle.id}
-                  className="p-6 bg-background border-2 border-border rounded-lg"
+                  className="p-3 sm:p-6 bg-background border-2 border-border rounded-lg"
                 >
                   {/* Bundle Header */}
-                  <div className="flex justify-between items-start mb-4 pb-4 border-b border-border">
-                    <div>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4 pb-4 border-b border-border">
+                    <div className="flex-1 min-w-0">
                       {bundle.booking_code && (
-                        <div className="mb-2 text-sm">
-                          <span className="text-muted-foreground">Booking Code: </span>
+                        <div className="mb-2 text-xs sm:text-sm">
+                          <span className="text-muted-foreground">Code: </span>
                           <span className="font-mono font-bold text-primary">{bundle.booking_code}</span>
                           <span className="text-muted-foreground ml-2">on</span>
                           <span className="font-semibold text-foreground ml-1">{bundle.betting_platform || 'football.com'}</span>
                         </div>
                       )}
-                      <div className="font-bold text-foreground text-xl mb-2">
-                        Prediction Package #{bundle.id.slice(0, 8)}
+                      <div className="font-bold text-foreground text-base sm:text-xl mb-2">
+                        Package #{bundle.id.slice(0, 8)}
                       </div>
-                      <div className="space-y-1 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Status: </span>
-                          <span className="font-semibold">
-                            {bundle.prediction_type === 'vip' ? '🔒 VIP' : '🆓 Free'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Created: </span>
-                          <span className="text-foreground">
-                            {new Date(bundle.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Admin ID: </span>
-                          <span className="text-foreground font-mono text-xs">
-                            {bundle.created_by}
-                          </span>
-                        </div>
+                      <div className="flex flex-wrap gap-2 text-xs sm:text-sm">
+                        <span className="font-semibold">
+                          {bundle.prediction_type === 'vip' ? '🔒 VIP' : '🆓 Free'}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {new Date(bundle.created_at).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
                     <Button
                       variant="destructive"
                       size="sm"
+                      className="self-end sm:self-start text-xs"
                       onClick={() => handleDeleteBundle(bundle.id)}
                     >
                       Delete
                     </Button>
                   </div>
                   
-                  {/* Fixture List & Results */}
+                  {/* Fixture List & Results - Mobile Card View */}
                   <div className="mb-4">
-                    <h4 className="font-bold text-foreground mb-3">Fixture List & Results</h4>
-                    <div className="overflow-x-auto">
+                    <h4 className="font-bold text-foreground mb-3 text-sm sm:text-base">Fixture List & Results</h4>
+                    
+                    {/* Desktop Table */}
+                    <div className="hidden sm:block overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-border">
@@ -407,23 +400,45 @@ export default function Admin() {
                         </tbody>
                       </table>
                     </div>
+
+                    {/* Mobile Card View */}
+                    <div className="sm:hidden space-y-3">
+                      {bundle.predictions?.map((pred: any) => (
+                        <div key={pred.id} className="p-3 bg-muted/50 rounded-lg border border-border">
+                          <div className="font-medium text-foreground text-sm mb-2">{pred.match_name}</div>
+                          <div className="flex flex-wrap gap-2 text-xs mb-2">
+                            <span className="text-muted-foreground">✅ {pred.prediction_text}</span>
+                            <span className="font-semibold text-primary">@ {parseFloat(pred.odds).toFixed(2)}</span>
+                          </div>
+                          <select
+                            value={pred.result || 'pending'}
+                            onChange={(e) => handleUpdatePredictionResult(pred.id, e.target.value)}
+                            className="w-full px-3 py-2 border border-border rounded bg-background text-foreground text-xs font-semibold"
+                          >
+                            <option value="pending">PENDING</option>
+                            <option value="won">WON</option>
+                            <option value="lost">LOST</option>
+                          </select>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   
                   {/* Package Summary */}
                   <div className="pt-4 border-t border-border">
-                    <h4 className="font-bold text-foreground mb-3">Package Summary</h4>
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-lg font-semibold text-foreground">Total Combined Odds:</span>
-                      <span className="text-2xl font-bold text-primary">
+                    <h4 className="font-bold text-foreground mb-3 text-sm sm:text-base">Package Summary</h4>
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
+                      <span className="text-sm sm:text-lg font-semibold text-foreground">Total Combined Odds:</span>
+                      <span className="text-xl sm:text-2xl font-bold text-primary">
                         {parseFloat(bundle.total_odds).toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 pt-3 border-t border-border">
-                      <span className="font-semibold text-foreground">Final Package Status:</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 pt-3 border-t border-border">
+                      <span className="font-semibold text-foreground text-sm">Final Package Status:</span>
                       <select
                         value={bundle.final_status || 'pending'}
                         onChange={(e) => handleUpdateBundleStatus(bundle.id, e.target.value)}
-                        className="px-4 py-2 border border-border rounded bg-background text-foreground font-bold"
+                        className="px-4 py-2 border border-border rounded bg-background text-foreground font-bold text-sm"
                       >
                         <option value="pending">PENDING</option>
                         <option value="won">WON</option>
@@ -437,19 +452,19 @@ export default function Admin() {
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-6">
-          <h3 className="text-xl font-bold text-foreground mb-4">Registered Members</h3>
+        <div className="bg-card border border-border rounded-lg p-4 sm:p-6">
+          <h3 className="text-lg sm:text-xl font-bold text-foreground mb-4">Registered Members</h3>
           <div className="space-y-2">
             {users.map((user) => {
               const isAdmin = userRoles[user.id]?.includes('admin');
               return (
                 <div
                   key={user.id}
-                  className="flex justify-between items-center p-3 bg-background border border-border rounded-lg"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-3 bg-background border border-border rounded-lg"
                 >
-                  <div>
-                    <div className="font-semibold text-foreground">{user.email}</div>
-                    <div className="text-sm text-muted-foreground">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-foreground text-sm sm:text-base truncate">{user.email}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">
                       Joined: {new Date(user.created_at).toLocaleDateString()}
                       {isAdmin && <span className="ml-2 text-primary font-semibold">• Admin</span>}
                     </div>
@@ -457,6 +472,7 @@ export default function Admin() {
                   <Button
                     variant={isAdmin ? "destructive" : "default"}
                     size="sm"
+                    className="self-end sm:self-center text-xs"
                     onClick={() => toggleAdminRole(user.id, isAdmin)}
                   >
                     {isAdmin ? "Remove Admin" : "Make Admin"}
