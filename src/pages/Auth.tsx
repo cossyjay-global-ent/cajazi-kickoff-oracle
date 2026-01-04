@@ -139,50 +139,56 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md bg-card border border-border rounded-lg shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-center mb-6 text-foreground">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 px-3 sm:px-4 py-8">
+      <div className="w-full max-w-md bg-card/90 backdrop-blur border border-border rounded-xl shadow-xl p-6 sm:p-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-center mb-4 sm:mb-6 text-foreground">
           {mode === "login" ? "Login to Your Account" : "Create an Account"}
         </h2>
 
-        <form onSubmit={mode === "login" ? handleLogin : handleRegister} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+        <form onSubmit={mode === "login" ? handleLogin : handleRegister} className="space-y-3 sm:space-y-4">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label htmlFor="email" className="text-sm">Email</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="text-sm h-10 sm:h-11"
+              placeholder="you@example.com"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label htmlFor="password" className="text-sm">Password</Label>
             <Input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              className="text-sm h-10 sm:h-11"
+              placeholder="••••••••"
             />
           </div>
 
           {mode === "register" && (
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="confirm-password" className="text-sm">Confirm Password</Label>
               <Input
                 id="confirm-password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                className="text-sm h-10 sm:h-11"
+                placeholder="••••••••"
               />
             </div>
           )}
 
           {mode === "login" && (
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="remember"
@@ -191,18 +197,18 @@ export default function Auth() {
                 />
                 <label
                   htmlFor="remember"
-                  className="text-sm text-muted-foreground cursor-pointer"
+                  className="text-xs sm:text-sm text-muted-foreground cursor-pointer"
                 >
                   Remember me
                 </label>
               </div>
-              <a href="#" className="text-sm text-primary hover:underline">
+              <a href="#" className="text-xs sm:text-sm text-primary hover:underline">
                 Forgot password?
               </a>
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full h-10 sm:h-11 text-sm" disabled={loading}>
             {loading ? "Please wait..." : mode === "login" ? "Login" : "Register"}
           </Button>
 
@@ -216,10 +222,10 @@ export default function Auth() {
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className="w-full h-10 sm:h-11 text-sm"
             onClick={handleGoogleSignIn}
           >
-            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" viewBox="0 0 24 24">
               <path
                 fill="currentColor"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -240,14 +246,14 @@ export default function Auth() {
             Google
           </Button>
 
-          <div className="text-center text-sm text-muted-foreground">
+          <div className="text-center text-xs sm:text-sm text-muted-foreground">
             {mode === "login" ? (
               <>
                 Don't have an account?{" "}
                 <button
                   type="button"
                   onClick={() => setMode("register")}
-                  className="text-primary hover:underline"
+                  className="text-primary hover:underline font-medium"
                 >
                   Register
                 </button>
@@ -258,7 +264,7 @@ export default function Auth() {
                 <button
                   type="button"
                   onClick={() => setMode("login")}
-                  className="text-primary hover:underline"
+                  className="text-primary hover:underline font-medium"
                 >
                   Login
                 </button>

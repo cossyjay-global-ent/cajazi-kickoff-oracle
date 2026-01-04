@@ -51,30 +51,45 @@ export const SubscriptionManager = () => {
 
   const fetchUsersWithSubscriptions = async () => {
     // Fetch all users
-    const { data: profiles } = await supabase
+    const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, email')
       .order('email', { ascending: true });
 
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      return;
+    }
+
     if (!profiles) return;
 
-    // Fetch ALL subscriptions (not just active)
-    const { data: subscriptions } = await supabase
+    // Fetch ALL subscriptions (not just active) for comprehensive view
+    const { data: subscriptions, error: subsError } = await supabase
       .from('subscriptions')
       .select('*')
       .order('created_at', { ascending: false });
 
-    // Map subscriptions to users
+    if (subsError) {
+      console.error('Error fetching subscriptions:', subsError);
+    }
+
+    // Map subscriptions to users - get most recent subscription for each user
     const usersWithSubs: UserWithSubscription[] = profiles.map(profile => {
-      // Find most recent active subscription for this user
-      const sub = subscriptions?.find(s => 
-        s.user_id === profile.id && 
+      // Find all subscriptions for this user
+      const userSubs = subscriptions?.filter(s => s.user_id === profile.id) || [];
+      
+      // Get active subscription if any
+      const activeSub = userSubs.find(s => 
         s.status === 'active' && 
         new Date(s.expires_at) > new Date()
       );
+      
+      // If no active, get most recent subscription (could be expired)
+      const mostRecentSub = activeSub || (userSubs.length > 0 ? userSubs[0] : null);
+      
       return {
         ...profile,
-        subscription: sub || null
+        subscription: mostRecentSub || null
       };
     });
 
@@ -415,12 +430,13 @@ export const SubscriptionManager = () => {
 
       {/* Summary */}
       <div className="mt-4 pt-4 border-t border-border">
-        <div className="flex flex-wrap gap-4 text-xs sm:text-sm text-muted-foreground">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
           <span>Total Users: <strong className="text-foreground">{users.length}</strong></span>
           <span>Active Subs: <strong className="text-success">{users.filter(u => getSubscriptionStatus(u.subscription) === 'active').length}</strong></span>
           <span>No Sub: <strong className="text-foreground">{users.filter(u => getSubscriptionStatus(u.subscription) === 'none').length}</strong></span>
+          <span>Expired: <strong className="text-destructive">{users.filter(u => getSubscriptionStatus(u.subscription) === 'expired').length}</strong></span>
           {orphanedSubscriptions.length > 0 && (
-            <span>Orphaned: <strong className="text-warning">{orphanedSubscriptions.length}</strong></span>
+            <span className="col-span-2 sm:col-span-1">Orphaned: <strong className="text-warning">{orphanedSubscriptions.length}</strong></span>
           )}
         </div>
       </div>

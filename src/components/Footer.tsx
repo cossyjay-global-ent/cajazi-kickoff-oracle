@@ -113,22 +113,23 @@ export const Footer = () => {
 
   return (
     <footer className="bg-card border-t border-border mt-auto">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+      <div className="container mx-auto px-3 sm:px-4 py-8 sm:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-8">
           {/* Comment Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Leave a Comment</CardTitle>
-              <CardDescription>Share your thoughts with us</CardDescription>
+          <Card className="bg-card/80">
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-base sm:text-lg">Leave a Comment</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Share your thoughts with us</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleCommentSubmit} className="space-y-4">
+              <form onSubmit={handleCommentSubmit} className="space-y-3 sm:space-y-4">
                 <Input
                   placeholder="Your Name"
                   value={commentForm.name}
                   onChange={(e) => setCommentForm({ ...commentForm, name: e.target.value })}
                   required
                   maxLength={100}
+                  className="text-sm"
                 />
                 <Input
                   type="email"
@@ -137,6 +138,7 @@ export const Footer = () => {
                   onChange={(e) => setCommentForm({ ...commentForm, email: e.target.value })}
                   required
                   maxLength={255}
+                  className="text-sm"
                 />
                 <Textarea
                   placeholder="Your Message"
@@ -144,9 +146,9 @@ export const Footer = () => {
                   onChange={(e) => setCommentForm({ ...commentForm, message: e.target.value })}
                   required
                   maxLength={1000}
-                  className="min-h-[100px]"
+                  className="min-h-[80px] sm:min-h-[100px] text-sm"
                 />
-                <Button type="submit" disabled={isSubmitting} className="w-full">
+                <Button type="submit" disabled={isSubmitting} className="w-full text-sm" size="sm">
                   <Send className="h-4 w-4 mr-2" />
                   Submit Comment
                 </Button>
@@ -155,13 +157,13 @@ export const Footer = () => {
           </Card>
 
           {/* Newsletter Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Subscribe to Newsletter</CardTitle>
-              <CardDescription>Get the latest predictions and updates</CardDescription>
+          <Card className="bg-card/80">
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-base sm:text-lg">Subscribe to Newsletter</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Get the latest predictions and updates</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleNewsletterSubmit} className="space-y-4">
+              <form onSubmit={handleNewsletterSubmit} className="space-y-3 sm:space-y-4">
                 <Input
                   type="email"
                   placeholder="Enter your email"
@@ -169,8 +171,9 @@ export const Footer = () => {
                   onChange={(e) => setNewsletterEmail(e.target.value)}
                   required
                   maxLength={255}
+                  className="text-sm"
                 />
-                <Button type="submit" disabled={isSubmitting} className="w-full">
+                <Button type="submit" disabled={isSubmitting} className="w-full text-sm" size="sm">
                   <Send className="h-4 w-4 mr-2" />
                   Subscribe
                 </Button>
@@ -179,21 +182,21 @@ export const Footer = () => {
           </Card>
         </div>
 
-        <div className="flex flex-col items-center gap-6">
+        <div className="flex flex-col items-center gap-4 sm:gap-6">
           <div className="flex items-center gap-2">
-            <Trophy className="h-8 w-8 text-primary" />
-            <h3 className="text-lg font-bold text-foreground">Cajazi Prediction</h3>
+            <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+            <h3 className="text-base sm:text-lg font-bold text-foreground">Cajazi Prediction</h3>
           </div>
           
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
             <Link to="/about#about" className="hover:text-primary transition-colors">About</Link>
             <Link to="/about#contact" className="hover:text-primary transition-colors">Contact</Link>
             <Link to="/about#privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
             <Link to="/about#terms" className="hover:text-primary transition-colors">Terms of Service</Link>
           </div>
           
-          <div className="text-sm text-muted-foreground">
-            &copy; 2025 Cajazi Prediction. All rights reserved.
+          <div className="text-xs sm:text-sm text-muted-foreground text-center">
+            &copy; {new Date().getFullYear()} Cajazi Prediction. All rights reserved.
           </div>
         </div>
       </div>
