@@ -137,20 +137,11 @@ export default function Home() {
                 />
               ))
             ) : (
-              <>
-                <PredictionCard
-                  match="Manchester United vs Liverpool"
-                  prediction="1X"
-                  odds={2.45}
-                  confidence={75}
-                />
-                <PredictionCard
-                  match="Barcelona vs Real Madrid"
-                  prediction="Over 2.5"
-                  odds={1.85}
-                  confidence={82}
-                />
-              </>
+              <div className="text-center py-8 sm:py-12 bg-card/50 border border-border rounded-xl">
+                <p className="text-muted-foreground text-sm sm:text-base">
+                  No predictions available for today. Check back soon!
+                </p>
+              </div>
             )}
           </div>
         </div>

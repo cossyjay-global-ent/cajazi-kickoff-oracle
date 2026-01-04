@@ -191,63 +191,63 @@ export default function Leaderboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-              <Trophy className="h-8 w-8 text-primary" />
+          <div className="text-center mb-6 sm:mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full mb-3 sm:mb-4">
+              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
             </div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">Leaderboard</h1>
-            <p className="text-muted-foreground">See how you rank among other predictors</p>
+            <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-1 sm:mb-2">Leaderboard</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">See how you rank among other predictors</p>
           </div>
 
           {/* Stats Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-8">
             <Card className="bg-card/80 backdrop-blur border-border">
-              <CardContent className="pt-4 text-center">
-                <Users className="h-6 w-6 text-primary mx-auto mb-2" />
-                <div className="text-2xl font-bold text-foreground">{topPerformers.length + topAchievers.length}</div>
-                <div className="text-xs text-muted-foreground">Active Users</div>
+              <CardContent className="pt-3 sm:pt-4 text-center">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-primary mx-auto mb-1.5 sm:mb-2" />
+                <div className="text-lg sm:text-2xl font-bold text-foreground">{topPerformers.length + topAchievers.length}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Active Users</div>
               </CardContent>
             </Card>
             <Card className="bg-card/80 backdrop-blur border-border">
-              <CardContent className="pt-4 text-center">
-                <Trophy className="h-6 w-6 text-yellow-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-foreground">
+              <CardContent className="pt-3 sm:pt-4 text-center">
+                <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500 mx-auto mb-1.5 sm:mb-2" />
+                <div className="text-lg sm:text-2xl font-bold text-foreground">
                   {topPerformers[0]?.success_rate.toFixed(1) || 0}%
                 </div>
-                <div className="text-xs text-muted-foreground">Top Success Rate</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Top Success Rate</div>
               </CardContent>
             </Card>
             <Card className="bg-card/80 backdrop-blur border-border">
-              <CardContent className="pt-4 text-center">
-                <Medal className="h-6 w-6 text-purple-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-foreground">
+              <CardContent className="pt-3 sm:pt-4 text-center">
+                <Medal className="h-5 w-5 sm:h-6 sm:w-6 text-purple-500 mx-auto mb-1.5 sm:mb-2" />
+                <div className="text-lg sm:text-2xl font-bold text-foreground">
                   {topAchievers[0]?.unlocked_badges || 0}
                 </div>
-                <div className="text-xs text-muted-foreground">Most Badges</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Most Badges</div>
               </CardContent>
             </Card>
             <Card className="bg-card/80 backdrop-blur border-border">
-              <CardContent className="pt-4 text-center">
-                <Star className="h-6 w-6 text-amber-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-foreground">{ACHIEVEMENTS_LIST.length}</div>
-                <div className="text-xs text-muted-foreground">Total Badges</div>
+              <CardContent className="pt-3 sm:pt-4 text-center">
+                <Star className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500 mx-auto mb-1.5 sm:mb-2" />
+                <div className="text-lg sm:text-2xl font-bold text-foreground">{ACHIEVEMENTS_LIST.length}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Total Badges</div>
               </CardContent>
             </Card>
           </div>
 
           {/* Leaderboard Tabs */}
-          <Tabs defaultValue="performers" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 bg-muted/50">
-              <TabsTrigger value="performers" className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Top Performers
+          <Tabs defaultValue="performers" className="space-y-4 sm:space-y-6">
+            <TabsList className="grid w-full grid-cols-2 bg-muted/50 h-auto p-1">
+              <TabsTrigger value="performers" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm py-2">
+                <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Top</span> Performers
               </TabsTrigger>
-              <TabsTrigger value="achievers" className="flex items-center gap-2">
-                <Award className="h-4 w-4" />
-                Top Achievers
+              <TabsTrigger value="achievers" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm py-2">
+                <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Top</span> Achievers
               </TabsTrigger>
             </TabsList>
 
@@ -265,21 +265,21 @@ export default function Leaderboard() {
                   {topPerformers.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">No users with enough predictions yet</p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       {topPerformers.map((user) => (
                         <Link
                           key={user.id}
                           to={`/user/${user.id}`}
-                          className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all hover:scale-[1.01] cursor-pointer ${getRankStyles(user.rank)} ${
+                          className={`flex items-center gap-2 sm:gap-4 p-3 sm:p-4 rounded-lg border-2 transition-all hover:scale-[1.01] cursor-pointer ${getRankStyles(user.rank)} ${
                             user.id === currentUserId ? 'ring-2 ring-primary' : ''
                           }`}
                         >
-                          <div className="w-10 flex justify-center">
+                          <div className="w-8 sm:w-10 flex justify-center flex-shrink-0">
                             {getRankIcon(user.rank)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold text-foreground truncate">
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                              <p className="font-semibold text-foreground truncate text-sm sm:text-base">
                                 {getDisplayName(user)}
                               </p>
                               {user.featured_achievement && (
@@ -287,18 +287,18 @@ export default function Leaderboard() {
                               )}
                               <RankBadge rankTier={user.rank_tier} xpPoints={user.xp_points} size="sm" />
                               {user.id === currentUserId && (
-                                <Badge variant="secondary" className="text-xs">You</Badge>
+                                <Badge variant="secondary" className="text-[10px] sm:text-xs">You</Badge>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
                               {user.correct_predictions} correct / {user.predictions_viewed} viewed
                             </p>
                           </div>
-                          <div className="text-right">
-                            <div className="text-2xl font-bold text-primary">
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-lg sm:text-2xl font-bold text-primary">
                               {user.success_rate.toFixed(1)}%
                             </div>
-                            <div className="text-xs text-muted-foreground">Success Rate</div>
+                            <div className="text-[10px] sm:text-xs text-muted-foreground">Success Rate</div>
                           </div>
                         </Link>
                       ))}
@@ -322,21 +322,21 @@ export default function Leaderboard() {
                   {topAchievers.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">No users with badges yet</p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       {topAchievers.map((user) => (
                         <Link
                           key={user.id}
                           to={`/user/${user.id}`}
-                          className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all hover:scale-[1.01] cursor-pointer ${getRankStyles(user.rank)} ${
+                          className={`flex items-center gap-2 sm:gap-4 p-3 sm:p-4 rounded-lg border-2 transition-all hover:scale-[1.01] cursor-pointer ${getRankStyles(user.rank)} ${
                             user.id === currentUserId ? 'ring-2 ring-primary' : ''
                           }`}
                         >
-                          <div className="w-10 flex justify-center">
+                          <div className="w-8 sm:w-10 flex justify-center flex-shrink-0">
                             {getRankIcon(user.rank)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold text-foreground truncate">
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                              <p className="font-semibold text-foreground truncate text-sm sm:text-base">
                                 {getDisplayName(user)}
                               </p>
                               {user.featured_achievement && (
@@ -344,29 +344,29 @@ export default function Leaderboard() {
                               )}
                               <RankBadge rankTier={user.rank_tier} xpPoints={user.xp_points} size="sm" />
                               {user.id === currentUserId && (
-                                <Badge variant="secondary" className="text-xs">You</Badge>
+                                <Badge variant="secondary" className="text-[10px] sm:text-xs">You</Badge>
                               )}
                             </div>
-                            <div className="flex flex-wrap gap-1 mt-1">
+                            <div className="flex flex-wrap gap-0.5 sm:gap-1 mt-1">
                               {ACHIEVEMENTS_LIST.slice(0, user.unlocked_badges).map((achievement) => {
                                 const Icon = achievement.icon;
                                 return (
                                   <div
                                     key={achievement.id}
-                                    className={`w-6 h-6 rounded-full bg-muted flex items-center justify-center ${achievement.color}`}
+                                    className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-muted flex items-center justify-center ${achievement.color}`}
                                     title={achievement.name}
                                   >
-                                    <Icon className="h-3 w-3" />
+                                    <Icon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                   </div>
                                 );
                               })}
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-2xl font-bold text-primary">
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-lg sm:text-2xl font-bold text-primary">
                               {user.unlocked_badges}
                             </div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-[10px] sm:text-xs text-muted-foreground">
                               / {ACHIEVEMENTS_LIST.length} Badges
                             </div>
                           </div>
