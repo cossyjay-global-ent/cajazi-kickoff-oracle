@@ -270,28 +270,34 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
+          payment_email: string | null
           plan_type: string
+          registration_status: string | null
           started_at: string
           status: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           expires_at: string
           id?: string
+          payment_email?: string | null
           plan_type: string
+          registration_status?: string | null
           started_at?: string
           status?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           expires_at?: string
           id?: string
+          payment_email?: string | null
           plan_type?: string
+          registration_status?: string | null
           started_at?: string
           status?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
