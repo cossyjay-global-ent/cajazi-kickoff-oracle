@@ -45,13 +45,34 @@ export default function Home() {
   const checkSubscription = async () => {
     if (!user) return;
 
-    const { data } = await supabase
+    // First check by user_id
+    let { data } = await supabase
       .from('subscriptions')
       .select('*')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .gt('expires_at', new Date().toISOString())
       .maybeSingle();
+
+    // If not found, check by email for recently linked subscriptions
+    if (!data && user.email) {
+      const { data: emailData } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('payment_email', user.email.toLowerCase())
+        .eq('status', 'active')
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
+      
+      if (emailData) {
+        // Auto-link this subscription to the user
+        await supabase
+          .from('subscriptions')
+          .update({ user_id: user.id, registration_status: 'registered' })
+          .eq('id', emailData.id);
+        data = emailData;
+      }
+    }
 
     setHasSubscription(!!data);
   };
