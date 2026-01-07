@@ -84,13 +84,34 @@ export default function VIP() {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      // First check by user_id
+      let { data, error } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('status', 'active')
         .gt('expires_at', new Date().toISOString())
         .maybeSingle();
+
+      // If not found by user_id, check by email (for recently linked subscriptions)
+      if (!data && user.email) {
+        const { data: emailData, error: emailError } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('payment_email', user.email.toLowerCase())
+          .eq('status', 'active')
+          .gt('expires_at', new Date().toISOString())
+          .maybeSingle();
+        
+        if (emailData && !emailError) {
+          // Auto-link this subscription to the user
+          await supabase
+            .from('subscriptions')
+            .update({ user_id: user.id, registration_status: 'registered' })
+            .eq('id', emailData.id);
+          data = emailData;
+        }
+      }
 
       if (error) {
         console.error('Error checking subscription:', error);
