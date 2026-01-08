@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { User } from "@supabase/supabase-js";
 import { usePaystackCheckout, subscriptionPlans } from "@/hooks/usePaystackCheckout";
+import { SubscriptionStatusBadge } from "@/components/SubscriptionStatusBadge";
 
 export default function VIP() {
   const [hasSubscription, setHasSubscription] = useState(false);
@@ -245,6 +246,11 @@ export default function VIP() {
               <h2 className="text-2xl sm:text-4xl font-bold text-foreground mb-1 sm:mb-2">VIP Predictions</h2>
               <p className="text-sm sm:text-base text-muted-foreground">Exclusive premium betting insights</p>
             </div>
+            
+            {/* Subscription Status Badge */}
+            {hasSubscription && user && (
+              <SubscriptionStatusBadge userId={user.id} userEmail={user.email} showDetails={true} />
+            )}
             
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <Button
