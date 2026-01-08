@@ -189,6 +189,29 @@ serve(async (req) => {
         })
       }
 
+      // Send activation email
+      try {
+        const emailPayload = {
+          type: 'subscription_activated',
+          recipient_email: customerEmail,
+          plan_type: planType,
+          expires_at: expiresAt.toISOString(),
+        }
+        
+        await fetch(`${SUPABASE_URL}/functions/v1/send-subscription-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify(emailPayload),
+        })
+        console.log('Activation email sent to:', customerEmail)
+      } catch (emailError) {
+        console.error('Failed to send activation email:', emailError)
+        // Don't fail the webhook for email errors
+      }
+
       return new Response(
         JSON.stringify({ 
           success: true, 
