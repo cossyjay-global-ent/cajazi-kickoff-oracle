@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Star, CalendarIcon, Loader2, Filter } from "lucide-react";
+import { Star, CalendarIcon, Loader2, Filter, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { User } from "@supabase/supabase-js";
+import { usePaystackCheckout, subscriptionPlans } from "@/hooks/usePaystackCheckout";
 
 export default function VIP() {
   const [hasSubscription, setHasSubscription] = useState(false);
@@ -27,6 +28,7 @@ export default function VIP() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { initiatePayment, isLoading: isPaymentLoading, isScriptLoaded } = usePaystackCheckout();
 
   useEffect(() => {
     checkAuth();
@@ -203,12 +205,21 @@ export default function VIP() {
   };
 
 
-  const plans = [
-    { name: "2 Weeks", price: "$2.99", paymentLink: "https://paystack.shop/pay/39fxqcd5ub" },
-    { name: "1 Month", price: "$5.99", paymentLink: "https://paystack.shop/pay/mtir55093q" },
-    { name: "6 Months", price: "$19.99", paymentLink: "https://paystack.shop/pay/iri4mxhp9e" },
-    { name: "Yearly", price: "$30.99", paymentLink: "https://paystack.shop/pay/t114p21jd8" },
-  ];
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const handlePlanSelect = (plan: typeof subscriptionPlans[0]) => {
+    if (!user?.email) {
+      toast.error("Please log in to subscribe.");
+      return;
+    }
+    initiatePayment(plan, user.email);
+  };
 
   if (loading) {
     return (
@@ -300,19 +311,26 @@ export default function VIP() {
               </p>
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-                {plans.map((plan) => (
+                {subscriptionPlans.map((plan) => (
                   <div
-                    key={plan.name}
-                    className="bg-background/60 backdrop-blur border-2 border-border rounded-xl p-3 sm:p-6 hover:border-primary hover:shadow-xl transition-all duration-300"
+                    key={plan.id}
+                    className="bg-background/60 backdrop-blur border-2 border-border rounded-xl p-3 sm:p-6 hover:border-primary hover:shadow-xl transition-all duration-300 group"
                   >
                     <h4 className="text-sm sm:text-xl font-bold text-foreground mb-1 sm:mb-3">{plan.name}</h4>
-                    <p className="text-xl sm:text-4xl font-bold text-primary mb-3 sm:mb-6">{plan.price}</p>
+                    <p className="text-xl sm:text-4xl font-bold text-primary mb-1 sm:mb-2">{formatPrice(plan.price)}</p>
+                    <p className="text-xs text-muted-foreground mb-3 sm:mb-6">{plan.duration}</p>
                     <Button
-                      className="w-full shadow-md text-xs sm:text-sm"
+                      className="w-full shadow-md text-xs sm:text-sm gap-2"
                       size="sm"
-                      onClick={() => window.open(plan.paymentLink, '_blank')}
+                      onClick={() => handlePlanSelect(plan)}
+                      disabled={isPaymentLoading || !isScriptLoaded}
                     >
-                      Select Plan
+                      {isPaymentLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <CreditCard className="h-4 w-4" />
+                      )}
+                      {isPaymentLoading ? "Processing..." : "Subscribe"}
                     </Button>
                   </div>
                 ))}

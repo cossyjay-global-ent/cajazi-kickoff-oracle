@@ -11,6 +11,7 @@ const PLAN_DURATIONS: Record<string, number> = {
   '2_weeks': 14,
   '1_month': 30,
   '6_months': 180,
+  '1_year': 365,
   'yearly': 365,
   // Paystack plan codes - map to durations
   'PLN_2weeks': 14,
@@ -19,13 +20,17 @@ const PLAN_DURATIONS: Record<string, number> = {
   'PLN_yearly': 365,
 }
 
-// Price to plan mapping (in NGN or USD cents depending on your setup)
+// Price to plan mapping (in NGN kobo - Paystack sends amount in kobo)
 const PRICE_TO_PLAN: Record<string, string> = {
+  '4500': '2_weeks',    // ₦4,500
+  '8500': '1_month',    // ₦8,500
+  '35000': '6_months',  // ₦35,000
+  '55000': '1_year',    // ₦55,000
+  // Legacy USD prices (in cents)
   '299': '2_weeks',
   '599': '1_month', 
   '1999': '6_months',
-  '3099': 'yearly',
-  // Add more price mappings as needed
+  '3099': '1_year',
 }
 
 serve(async (req) => {
@@ -89,11 +94,13 @@ serve(async (req) => {
     if (payload.event === 'charge.success') {
       const data = payload.data
       const customerEmail = data.customer?.email?.toLowerCase()
-      const amountInCents = Math.round(data.amount / 100).toString() // Convert from kobo/cents
+      const amountInNaira = Math.round(data.amount / 100).toString() // Convert from kobo to naira
       const reference = data.reference
+      // Check for plan_id in metadata first (from inline popup), then fallback to plan code
+      const planIdFromMetadata = data.metadata?.plan_id
       const planCode = data.plan?.plan_code || data.metadata?.plan_type
 
-      console.log('Processing payment for:', customerEmail, 'Amount:', amountInCents, 'Reference:', reference)
+      console.log('Processing payment for:', customerEmail, 'Amount (NGN):', amountInNaira, 'Reference:', reference, 'Plan ID:', planIdFromMetadata)
 
       if (!customerEmail) {
         console.error('No customer email in payment data')
@@ -103,8 +110,8 @@ serve(async (req) => {
         )
       }
 
-      // Determine plan type from amount or plan code
-      let planType = PRICE_TO_PLAN[amountInCents] || planCode || '1_month'
+      // Determine plan type: 1) from metadata plan_id, 2) from amount, 3) from plan code
+      let planType = planIdFromMetadata || PRICE_TO_PLAN[amountInNaira] || planCode || '1_month'
       
       // Clean up plan type
       if (planType.startsWith('PLN_')) {
