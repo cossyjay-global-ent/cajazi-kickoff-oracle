@@ -40,14 +40,16 @@ export const SubscriptionStatusBadge = ({ userId, userEmail, showDetails = true 
   const fetchSubscription = async () => {
     try {
       let data = null;
+      const now = new Date().toISOString();
       
-      // Try by user_id first
+      // Try by user_id first - get most recent active subscription
       if (userId) {
         const { data: userSub } = await supabase
           .from('subscriptions')
           .select('*')
           .eq('user_id', userId)
           .eq('status', 'active')
+          .gt('expires_at', now)
           .order('expires_at', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -61,6 +63,7 @@ export const SubscriptionStatusBadge = ({ userId, userEmail, showDetails = true 
           .select('*')
           .eq('payment_email', userEmail.toLowerCase())
           .eq('status', 'active')
+          .gt('expires_at', now)
           .order('expires_at', { ascending: false })
           .limit(1)
           .maybeSingle();
