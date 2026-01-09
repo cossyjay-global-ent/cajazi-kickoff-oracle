@@ -18,11 +18,14 @@ export const useSubscription = (userId?: string, userEmail?: string) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (userId || userEmail) {
-      checkSubscription();
-    } else {
-      setLoading(false);
-    }
+    const fetchData = async () => {
+      if (userId || userEmail) {
+        await checkSubscription();
+      } else {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, [userId, userEmail]);
 
   const checkSubscription = async () => {
