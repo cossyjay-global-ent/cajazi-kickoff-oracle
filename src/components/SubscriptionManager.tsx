@@ -1133,27 +1133,27 @@ export const SubscriptionManager = () => {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
                         {status === 'pending' && (
                           <>
                             <Button
                               variant="default"
                               size="sm"
-                              className="flex-1 h-8 text-xs"
+                              className="h-9 text-xs w-full"
                               onClick={() => handleActivateSubscription(sub.id, sub.payment_email)}
                               disabled={activating}
                             >
-                              <Check className="h-3 w-3 mr-1" />
-                              Activate
+                              <Check className="h-3 w-3 mr-1 flex-shrink-0" />
+                              <span className="truncate">Activate</span>
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-8 text-xs"
+                              className="h-9 text-xs w-full"
                               onClick={() => openLinkDialog(sub)}
                             >
-                              <LinkIcon className="h-3 w-3 mr-1" />
-                              Link
+                              <LinkIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                              <span className="truncate">Link User</span>
                             </Button>
                           </>
                         )}
@@ -1162,18 +1162,18 @@ export const SubscriptionManager = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="flex-1 h-8 text-xs"
+                              className="h-9 text-xs w-full"
                               onClick={() => handleExtendSubscription(sub.id, sub.expires_at)}
                             >
-                              +1 Month
+                              <span className="truncate">+1 Month</span>
                             </Button>
                             <Button
                               variant="destructive"
                               size="sm"
-                              className="h-8 text-xs"
+                              className="h-9 text-xs w-full"
                               onClick={() => handleExpireSubscription(sub.id)}
                             >
-                              Expire
+                              <span className="truncate">Expire</span>
                             </Button>
                           </>
                         )}
