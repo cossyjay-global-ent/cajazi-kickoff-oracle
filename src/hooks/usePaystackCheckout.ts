@@ -115,7 +115,7 @@ export const usePaystackCheckout = () => {
       const reference = generateReference();
 
       try {
-        const handler = window.PaystackPop.setup({
+        const config: PaystackConfig = {
           key: PAYSTACK_PUBLIC_KEY,
           email: email,
           amount: plan.price * 100, // Convert to kobo
@@ -137,7 +137,7 @@ export const usePaystackCheckout = () => {
               },
             ],
           },
-          callback: async (response: PaystackResponse) => {
+          callback: function(response: PaystackResponse) {
             console.log("Payment successful:", response);
             toast.success(
               "Payment successful! Your subscription will be activated shortly."
@@ -145,18 +145,18 @@ export const usePaystackCheckout = () => {
             setIsLoading(false);
             
             // The webhook will handle subscription activation
-            // But we can also verify here for immediate feedback
-            setTimeout(() => {
+            setTimeout(function() {
               window.location.reload();
             }, 2000);
           },
-          onClose: () => {
+          onClose: function() {
             console.log("Payment popup closed");
             toast.info("Payment cancelled. You can try again anytime.");
             setIsLoading(false);
           },
-        });
+        };
 
+        const handler = window.PaystackPop.setup(config);
         handler.openIframe();
       } catch (error) {
         console.error("Payment initialization error:", error);
