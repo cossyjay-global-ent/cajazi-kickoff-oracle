@@ -122,8 +122,9 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       devOptions: {
-        enabled: true,
-        type: "module"
+        // Disable service worker in dev/preview to prevent stale-cache blank screens
+        enabled: false,
+        type: "module",
       }
     })
   ].filter(Boolean),
