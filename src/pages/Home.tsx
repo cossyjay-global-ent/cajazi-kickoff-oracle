@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PredictionCard } from "@/components/PredictionCard";
+import { FullPageState } from "@/components/FullPageState";
 import { Star, Crown } from "lucide-react";
 
 export default function Home() {
@@ -104,7 +105,13 @@ export default function Home() {
   };
 
   if (!user) {
-    return null;
+    return (
+      <FullPageState
+        title="Loading"
+        description="Checking your session…"
+        variant="loading"
+      />
+    );
   }
 
   return (

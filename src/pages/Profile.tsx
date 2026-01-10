@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { FullPageState } from "@/components/FullPageState";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Trophy, Target, TrendingUp, Heart, Eye, Award, Calendar, Star, Zap, Crown, Medal, Gift, Flame, Check, Users, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -492,7 +493,13 @@ export default function Profile() {
   }
 
   if (!user || !profile) {
-    return null;
+    return (
+      <FullPageState
+        title="Loading profile"
+        description="Please wait…"
+        variant="loading"
+      />
+    );
   }
 
   const successRate = profile.predictions_viewed > 0 

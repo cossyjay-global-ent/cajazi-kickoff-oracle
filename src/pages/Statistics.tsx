@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { FullPageState } from "@/components/FullPageState";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Trophy, TrendingUp, Target, Percent, Filter } from "lucide-react";
@@ -341,7 +342,13 @@ export default function Statistics() {
   }
 
   if (!isAuthenticated) {
-    return null;
+    return (
+      <FullPageState
+        title="Redirecting to login"
+        description="Please sign in to view statistics."
+        variant="loading"
+      />
+    );
   }
 
   const pieData = [

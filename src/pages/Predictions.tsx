@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PredictionCard } from "@/components/PredictionCard";
+import { FullPageState } from "@/components/FullPageState";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
@@ -110,7 +111,13 @@ export default function Predictions() {
   }
 
   if (!isAuthenticated) {
-    return null;
+    return (
+      <FullPageState
+        title="Redirecting to login"
+        description="Please sign in to view predictions."
+        variant="loading"
+      />
+    );
   }
 
   return (
