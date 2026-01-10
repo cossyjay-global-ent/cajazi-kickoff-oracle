@@ -25,43 +25,50 @@ import { useRealtimePredictions } from "./hooks/useRealtimePredictions";
 
 const queryClient = new QueryClient();
 
-const App = () => {
+// Inner component that uses hooks requiring context
+const AppContent = () => {
   // Set up realtime notifications
   useRealtimePredictions();
   
   return (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <div className="flex flex-col min-h-screen">
-          <Header />
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/livescore" element={<Livescore />} />
-              <Route path="/predictions" element={<Predictions />} />
-              <Route path="/statistics" element={<Statistics />} />
-              <Route path="/vip" element={<VIP />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/leaderboard" element={<Leaderboard />} />
-              <Route path="/user/:userId" element={<PublicProfile />} />
-              <Route path="/following" element={<Following />} />
-              <Route path="/install" element={<Install />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <Footer />
-          <InstallPrompt />
-        </div>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/livescore" element={<Livescore />} />
+          <Route path="/predictions" element={<Predictions />} />
+          <Route path="/statistics" element={<Statistics />} />
+          <Route path="/vip" element={<VIP />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/history" element={<History />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/user/:userId" element={<PublicProfile />} />
+          <Route path="/following" element={<Following />} />
+          <Route path="/install" element={<Install />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+      <Footer />
+      <InstallPrompt />
+    </div>
+  );
+};
+
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 };
 
