@@ -549,40 +549,158 @@ export const SubscriptionManager = () => {
         </p>
       </div>
 
-      {/* Subscription Table */}
-      <ScrollArea className="h-[500px] border rounded-lg">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center py-8 text-muted-foreground">
-              <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
-              Loading subscriptions...
+      {/* Subscription Table - Desktop */}
+      <div className="hidden lg:block">
+        <ScrollArea className="h-[500px] border rounded-lg">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center py-8 text-muted-foreground">
+                <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
+                Loading subscriptions...
+              </div>
             </div>
-          </div>
-        ) : filteredSubscriptions.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center py-8 text-muted-foreground">
-              <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-              {subscriptions.length === 0 
-                ? 'No subscription records found' 
-                : 'No subscriptions match your filters'}
+          ) : filteredSubscriptions.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center py-8 text-muted-foreground">
+                <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                {subscriptions.length === 0 
+                  ? 'No subscription records found' 
+                  : 'No subscriptions match your filters'}
+              </div>
             </div>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader className="sticky top-0 bg-card z-10">
-              <TableRow>
-                <TableHead className="min-w-[200px]">Email</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Start Date</TableHead>
-                <TableHead>Expiry</TableHead>
-                <TableHead>Reference</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          ) : (
+            <Table>
+              <TableHeader className="sticky top-0 bg-card z-10">
+                <TableRow>
+                  <TableHead className="min-w-[200px]">Email</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Start Date</TableHead>
+                  <TableHead>Expiry</TableHead>
+                  <TableHead>Reference</TableHead>
+                  <TableHead>Source</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredSubscriptions.map((sub) => {
+                  const status = getSubscriptionStatus(sub);
+                  const displayEmail = sub.profile?.email || sub.payment_email || 'Unknown';
+                  const isActive = status === 'active' || status === 'pending';
+                  const isUnregistered = !sub.user_id;
+                  
+                  return (
+                    <TableRow 
+                      key={sub.id}
+                      className={cn(
+                        status === 'pending' && "bg-warning/5",
+                        status === 'expired' && "opacity-70"
+                      )}
+                    >
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-foreground truncate max-w-[200px]">
+                            {displayEmail}
+                          </span>
+                          {isUnregistered && (
+                            <span className="text-xs text-warning flex items-center gap-1 mt-0.5">
+                              <UserPlus className="h-3 w-3" />
+                              Unregistered
+                            </span>
+                          )}
+                          {sub.payment_email && sub.profile?.email && sub.payment_email !== sub.profile.email && (
+                            <span className="text-xs text-muted-foreground mt-0.5">
+                              Paid: {sub.payment_email}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(status)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize whitespace-nowrap">
+                          {PLAN_LABELS[sub.plan_type] || sub.plan_type.replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium text-foreground">
+                        {formatAmount(sub.plan_type)}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                        {format(new Date(sub.started_at), "PP")}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <span className={cn(
+                          "text-sm",
+                          status === 'expired' ? "text-destructive" : "text-muted-foreground"
+                        )}>
+                          {sub.expires_at 
+                            ? format(new Date(sub.expires_at), "PP")
+                            : <span className="italic">Not activated</span>
+                          }
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
+                          {sub.id.slice(0, 8)}...
+                        </code>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {getSource(sub)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {isActive && (
+                          <div className="flex gap-1 justify-end">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs px-2"
+                              onClick={() => handleExtendSubscription(sub.id, sub.expires_at)}
+                            >
+                              +1 Mo
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="h-7 text-xs px-2"
+                              onClick={() => handleExpireSubscription(sub.id)}
+                            >
+                              Expire
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </ScrollArea>
+      </div>
+
+      {/* Subscription Cards - Mobile/Tablet */}
+      <div className="lg:hidden">
+        <ScrollArea className="h-[500px]">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center py-8 text-muted-foreground">
+                <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
+                Loading subscriptions...
+              </div>
+            </div>
+          ) : filteredSubscriptions.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center py-8 text-muted-foreground">
+                <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                {subscriptions.length === 0 
+                  ? 'No subscription records found' 
+                  : 'No subscriptions match your filters'}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
               {filteredSubscriptions.map((sub) => {
                 const status = getSubscriptionStatus(sub);
                 const displayEmail = sub.profile?.email || sub.payment_email || 'Unknown';
@@ -590,18 +708,20 @@ export const SubscriptionManager = () => {
                 const isUnregistered = !sub.user_id;
                 
                 return (
-                  <TableRow 
+                  <div 
                     key={sub.id}
                     className={cn(
-                      status === 'pending' && "bg-warning/5",
+                      "border border-border rounded-lg p-4 bg-card",
+                      status === 'pending' && "border-warning/50 bg-warning/5",
                       status === 'expired' && "opacity-70"
                     )}
                   >
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-foreground truncate max-w-[200px]">
+                    {/* Header: Email + Status */}
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground text-sm truncate">
                           {displayEmail}
-                        </span>
+                        </p>
                         {isUnregistered && (
                           <span className="text-xs text-warning flex items-center gap-1 mt-0.5">
                             <UserPlus className="h-3 w-3" />
@@ -609,74 +729,87 @@ export const SubscriptionManager = () => {
                           </span>
                         )}
                         {sub.payment_email && sub.profile?.email && sub.payment_email !== sub.profile.email && (
-                          <span className="text-xs text-muted-foreground mt-0.5">
+                          <span className="text-xs text-muted-foreground mt-0.5 block">
                             Paid: {sub.payment_email}
                           </span>
                         )}
                       </div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(status)}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="capitalize whitespace-nowrap">
-                        {PLAN_LABELS[sub.plan_type] || sub.plan_type.replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium text-foreground">
-                      {formatAmount(sub.plan_type)}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                      {format(new Date(sub.started_at), "PP")}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      <span className={cn(
-                        "text-sm",
-                        status === 'expired' ? "text-destructive" : "text-muted-foreground"
-                      )}>
-                        {sub.expires_at 
-                          ? format(new Date(sub.expires_at), "PP")
-                          : <span className="italic">Not activated</span>
-                        }
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
+                      {getStatusBadge(status)}
+                    </div>
+
+                    {/* Info Grid */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-3">
+                      <div>
+                        <span className="text-muted-foreground text-xs">Plan</span>
+                        <div className="mt-0.5">
+                          <Badge variant="outline" className="capitalize text-xs">
+                            {PLAN_LABELS[sub.plan_type] || sub.plan_type.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground text-xs">Amount</span>
+                        <p className="font-medium text-foreground mt-0.5">
+                          {formatAmount(sub.plan_type)}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground text-xs">Start Date</span>
+                        <p className="text-foreground mt-0.5">
+                          {format(new Date(sub.started_at), "PP")}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground text-xs">Expiry</span>
+                        <p className={cn(
+                          "mt-0.5",
+                          status === 'expired' ? "text-destructive" : "text-foreground"
+                        )}>
+                          {sub.expires_at 
+                            ? format(new Date(sub.expires_at), "PP")
+                            : <span className="italic text-muted-foreground">Not activated</span>
+                          }
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Source + Reference */}
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-3">
+                      <span>{getSource(sub)}</span>
+                      <span className="text-border">•</span>
+                      <code className="bg-muted px-1.5 py-0.5 rounded font-mono">
                         {sub.id.slice(0, 8)}...
                       </code>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {getSource(sub)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {isActive && (
-                        <div className="flex gap-1 justify-end">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs px-2"
-                            onClick={() => handleExtendSubscription(sub.id, sub.expires_at)}
-                          >
-                            +1 Mo
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="h-7 text-xs px-2"
-                            onClick={() => handleExpireSubscription(sub.id)}
-                          >
-                            Expire
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
+                    </div>
+
+                    {/* Actions */}
+                    {isActive && (
+                      <div className="flex gap-2 pt-2 border-t border-border">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 h-8 text-xs"
+                          onClick={() => handleExtendSubscription(sub.id, sub.expires_at)}
+                        >
+                          +1 Month
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="flex-1 h-8 text-xs"
+                          onClick={() => handleExpireSubscription(sub.id)}
+                        >
+                          Expire
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
-            </TableBody>
-          </Table>
-        )}
-      </ScrollArea>
+            </div>
+          )}
+        </ScrollArea>
+      </div>
 
       {/* Footer Info */}
       <div className="mt-4 p-3 bg-muted/30 rounded-lg">
