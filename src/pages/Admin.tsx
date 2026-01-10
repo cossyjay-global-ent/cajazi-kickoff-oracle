@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { FullPageState } from "@/components/FullPageState";
 import { toast } from "sonner";
 import { PredictionBuilder, PredictionFormData } from "@/components/PredictionBuilder";
 import { SubscriptionManager } from "@/components/SubscriptionManager";
@@ -299,7 +300,14 @@ export default function Admin() {
   }
 
   if (!isAdmin) {
-    return null;
+    return (
+      <FullPageState
+        title="Admin access required"
+        description="You don't have permission to view this page."
+        variant="info"
+        action={{ label: "Go Home", to: "/", variant: "outline" }}
+      />
+    );
   }
 
   return (

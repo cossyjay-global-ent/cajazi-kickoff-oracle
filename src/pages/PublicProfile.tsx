@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { FullPageState } from "@/components/FullPageState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Trophy, Target, TrendingUp, Calendar, Eye, Star, Award, Heart, Crown, Flame, Zap, Users, UserPlus, UserMinus } from "lucide-react";
 import { format } from "date-fns";
@@ -236,7 +237,16 @@ export default function PublicProfile() {
     );
   }
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <FullPageState
+        title="Profile unavailable"
+        description="This profile couldn't be loaded."
+        variant="info"
+        action={{ label: "View Leaderboard", to: "/leaderboard", variant: "outline" }}
+      />
+    );
+  }
 
   const successRate = profile.predictions_viewed > 0 
     ? ((profile.correct_predictions / profile.predictions_viewed) * 100).toFixed(1)

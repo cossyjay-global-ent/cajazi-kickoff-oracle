@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { User } from "@supabase/supabase-js";
 import { usePaystackCheckout, subscriptionPlans } from "@/hooks/usePaystackCheckout";
 import { SubscriptionStatusBadge } from "@/components/SubscriptionStatusBadge";
+import { FullPageState } from "@/components/FullPageState";
 
 export default function VIP() {
   const [hasSubscription, setHasSubscription] = useState(false);
@@ -234,7 +235,13 @@ export default function VIP() {
   }
 
   if (!isAuthenticated) {
-    return null;
+    return (
+      <FullPageState
+        title="Redirecting to login"
+        description="Please sign in to view VIP predictions."
+        variant="loading"
+      />
+    );
   }
 
   return (
