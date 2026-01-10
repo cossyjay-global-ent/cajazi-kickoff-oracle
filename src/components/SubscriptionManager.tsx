@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, CheckCircle, Clock, XCircle, UserPlus, Mail, Search, RefreshCw, Filter, CreditCard, AlertCircle, Check, Users, Link as LinkIcon } from "lucide-react";
+import { CalendarIcon, CheckCircle, Clock, XCircle, UserPlus, Mail, Search, RefreshCw, Filter, CreditCard, AlertCircle, Check, Users, Link as LinkIcon, CheckSquare, Square } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -94,6 +95,10 @@ export const SubscriptionManager = () => {
   // Link subscription form
   const [selectedSubForLink, setSelectedSubForLink] = useState<Subscription | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
+  
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkActivating, setBulkActivating] = useState(false);
 
   // Fetch all data on mount
   useEffect(() => {
@@ -243,6 +248,37 @@ export const SubscriptionManager = () => {
     return true;
   });
 
+  // Get pending subscriptions for bulk selection
+  const pendingSubscriptions = filteredSubscriptions.filter(
+    sub => getSubscriptionStatus(sub) === 'pending'
+  );
+  
+  const selectedPendingCount = Array.from(selectedIds).filter(id => 
+    pendingSubscriptions.some(sub => sub.id === id)
+  ).length;
+
+  const allPendingSelected = pendingSubscriptions.length > 0 && 
+    pendingSubscriptions.every(sub => selectedIds.has(sub.id));
+
+  const toggleSelectAll = () => {
+    if (allPendingSelected) {
+      setSelectedIds(new Set());
+    } else {
+      const newSelected = new Set(pendingSubscriptions.map(sub => sub.id));
+      setSelectedIds(newSelected);
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
   const stats = {
     total: subscriptions.length,
     active: subscriptions.filter(s => getSubscriptionStatus(s) === 'active').length,
@@ -259,6 +295,85 @@ export const SubscriptionManager = () => {
     const now = fromDate || new Date();
     const days = PLAN_DURATIONS[plan] || 30;
     return new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+  };
+
+  // Bulk activation handler
+  const handleBulkActivate = async () => {
+    const subsToActivate = pendingSubscriptions.filter(sub => selectedIds.has(sub.id));
+    
+    if (subsToActivate.length === 0) {
+      toast.error("No pending subscriptions selected");
+      return;
+    }
+
+    if (!confirm(`Activate ${subsToActivate.length} subscription(s)?\n\nThis will:\n- Set status to active\n- Update start dates to now\n- Recalculate expiry dates based on plans`)) {
+      return;
+    }
+
+    setBulkActivating(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      // Get all emails to check for existing profiles
+      const emails = subsToActivate
+        .map(sub => sub.payment_email?.toLowerCase())
+        .filter((email): email is string => !!email);
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .in('email', emails);
+
+      const profileMap = new Map(profiles?.map(p => [p.email.toLowerCase(), p.id]) || []);
+
+      // Process each subscription
+      for (const sub of subsToActivate) {
+        try {
+          const now = new Date();
+          const newExpiresAt = calculateExpiryDate(sub.plan_type, now);
+          const emailLower = sub.payment_email?.toLowerCase();
+          const userId = emailLower ? profileMap.get(emailLower) : null;
+
+          const updateData: Record<string, unknown> = {
+            status: 'active',
+            started_at: now.toISOString(),
+            expires_at: newExpiresAt.toISOString(),
+            registration_status: userId ? 'registered' : 'pending',
+          };
+
+          if (userId) {
+            updateData.user_id = userId;
+          }
+
+          const { error } = await supabase
+            .from('subscriptions')
+            .update(updateData)
+            .eq('id', sub.id);
+
+          if (error) throw error;
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to activate ${sub.id}:`, err);
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`Successfully activated ${successCount} subscription(s)`);
+      }
+      if (errorCount > 0) {
+        toast.error(`Failed to activate ${errorCount} subscription(s)`);
+      }
+
+      setSelectedIds(new Set());
+      await fetchAllSubscriptions();
+    } catch (error) {
+      console.error("Bulk activation error:", error);
+      toast.error("Failed to complete bulk activation");
+    } finally {
+      setBulkActivating(false);
+    }
   };
 
   // CRITICAL: Handle activation with proper date updates
@@ -709,11 +824,46 @@ export const SubscriptionManager = () => {
           </div>
         </div>
 
-        {/* Results Count */}
-        <div className="flex items-center justify-between mb-3">
+        {/* Results Count + Bulk Actions */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
           <p className="text-sm text-muted-foreground">
             Showing {filteredSubscriptions.length} of {subscriptions.length} subscriptions
           </p>
+          
+          {/* Bulk Action Bar */}
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-3 bg-primary/10 px-4 py-2 rounded-lg w-full sm:w-auto">
+              <span className="text-sm font-medium text-foreground">
+                {selectedPendingCount} selected
+              </span>
+              <Button
+                size="sm"
+                onClick={handleBulkActivate}
+                disabled={bulkActivating || selectedPendingCount === 0}
+                className="h-7"
+              >
+                {bulkActivating ? (
+                  <>
+                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                    Activating...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-3 w-3 mr-1" />
+                    Bulk Activate
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedIds(new Set())}
+                className="h-7"
+              >
+                Clear
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Subscription Table - Desktop */}
@@ -739,6 +889,15 @@ export const SubscriptionManager = () => {
               <Table>
                 <TableHeader className="sticky top-0 bg-card z-10">
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      {pendingSubscriptions.length > 0 && (
+                        <Checkbox
+                          checked={allPendingSelected}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Select all pending"
+                        />
+                      )}
+                    </TableHead>
                     <TableHead className="min-w-[200px]">Email</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Plan</TableHead>
@@ -754,15 +913,29 @@ export const SubscriptionManager = () => {
                     const status = getSubscriptionStatus(sub);
                     const displayEmail = sub.profile?.email || sub.payment_email || 'Unknown';
                     const isUnregistered = !sub.user_id;
+                    const isPending = status === 'pending';
+                    const isSelected = selectedIds.has(sub.id);
                     
                     return (
                       <TableRow 
                         key={sub.id}
                         className={cn(
                           status === 'pending' && "bg-warning/5",
-                          status === 'expired' && "opacity-70"
+                          status === 'expired' && "opacity-70",
+                          isSelected && "bg-primary/10"
                         )}
                       >
+                        <TableCell>
+                          {isPending ? (
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleSelectOne(sub.id)}
+                              aria-label={`Select ${displayEmail}`}
+                            />
+                          ) : (
+                            <div className="w-4" />
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
                             <span className="font-medium text-foreground truncate max-w-[200px]">
@@ -882,6 +1055,8 @@ export const SubscriptionManager = () => {
                   const status = getSubscriptionStatus(sub);
                   const displayEmail = sub.profile?.email || sub.payment_email || 'Unknown';
                   const isUnregistered = !sub.user_id;
+                  const isPending = status === 'pending';
+                  const isSelected = selectedIds.has(sub.id);
                   
                   return (
                     <div 
@@ -889,21 +1064,32 @@ export const SubscriptionManager = () => {
                       className={cn(
                         "border border-border rounded-lg p-4 bg-card",
                         status === 'pending' && "border-warning/50 bg-warning/5",
-                        status === 'expired' && "opacity-70"
+                        status === 'expired' && "opacity-70",
+                        isSelected && "border-primary bg-primary/10"
                       )}
                     >
                       {/* Header */}
                       <div className="flex items-start justify-between gap-2 mb-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground text-sm truncate">
-                            {displayEmail}
-                          </p>
-                          {isUnregistered && (
-                            <span className="text-xs text-warning flex items-center gap-1 mt-0.5">
-                              <UserPlus className="h-3 w-3" />
-                              Unregistered
-                            </span>
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          {isPending && (
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleSelectOne(sub.id)}
+                              aria-label={`Select ${displayEmail}`}
+                              className="mt-0.5"
+                            />
                           )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground text-sm truncate">
+                              {displayEmail}
+                            </p>
+                            {isUnregistered && (
+                              <span className="text-xs text-warning flex items-center gap-1 mt-0.5">
+                                <UserPlus className="h-3 w-3" />
+                                Unregistered
+                              </span>
+                            )}
+                          </div>
                         </div>
                         {getStatusBadge(status)}
                       </div>
