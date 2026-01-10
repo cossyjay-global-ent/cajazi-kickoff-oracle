@@ -9,6 +9,25 @@ import { CalendarIcon, X, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { z } from "zod";
+
+// Validation schema for individual predictions
+const predictionFormSchema = z.object({
+  teamA: z.string().trim().min(2, "Team A must be at least 2 characters").max(100, "Team A must be less than 100 characters"),
+  teamB: z.string().trim().min(2, "Team B must be at least 2 characters").max(100, "Team B must be less than 100 characters"),
+  predictionText: z.string().trim().min(1, "Prediction cannot be empty").max(200, "Prediction must be less than 200 characters"),
+  odds: z.string().refine((val) => {
+    const num = parseFloat(val);
+    return !isNaN(num) && num >= 1.01 && num <= 100;
+  }, "Odds must be between 1.01 and 100"),
+  confidence: z.string().refine((val) => {
+    if (!val) return true; // Optional
+    const num = parseInt(val);
+    return !isNaN(num) && num >= 0 && num <= 100;
+  }, "Confidence must be between 0 and 100"),
+});
+
+const bookingCodeSchema = z.string().max(100, "Booking code too long").optional();
 
 export interface PredictionFormData {
   id: string;
@@ -45,11 +64,27 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
   const totalOdds = predictions.reduce((acc, pred) => acc * parseFloat(pred.odds || "1"), 1);
 
   const addPrediction = () => {
+    // Validate input
+    try {
+      predictionFormSchema.parse({
+        teamA,
+        teamB,
+        predictionText,
+        odds,
+        confidence,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+        return;
+      }
+    }
+
     const newPrediction: PredictionFormData = {
       id: Math.random().toString(36).substr(2, 9),
-      teamA: teamA.trim() || "",
-      teamB: teamB.trim() || "",
-      predictionText: predictionText.trim() || "",
+      teamA: teamA.trim(),
+      teamB: teamB.trim(),
+      predictionText: predictionText.trim(),
       odds: odds || "1.00",
       confidence: confidence || "0",
       matchDate,
@@ -78,11 +113,24 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
   };
 
   const handleSubmit = async () => {
-    if (predictions.length === 0) return;
+    if (predictions.length === 0) {
+      toast.error("Add at least one prediction");
+      return;
+    }
+
+    // Validate booking code
+    try {
+      bookingCodeSchema.parse(bookingCode);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+        return;
+      }
+    }
     
     setIsSubmitting(true);
     try {
-      await onSubmit(predictions, predictionType, bookingCode, bettingPlatform);
+      await onSubmit(predictions, predictionType, bookingCode.trim(), bettingPlatform);
       setPredictions([]);
       setBookingCode("");
       setBettingPlatform("football.com");
@@ -92,51 +140,59 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       {/* Prediction Builder Section - Left Side */}
-      <div className="bg-card border border-border rounded-lg p-6">
-        <h3 className="text-xl font-bold text-foreground mb-4">Prediction Builder</h3>
+      <div className="bg-card border border-border rounded-lg p-4 sm:p-6">
+        <h3 className="text-lg sm:text-xl font-bold text-foreground mb-3 sm:mb-4">Prediction Builder</h3>
         
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="teamA">Team A</Label>
+        <div className="space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="teamA" className="text-xs sm:text-sm">Team A</Label>
               <Input
                 id="teamA"
                 value={teamA}
                 onChange={(e) => setTeamA(e.target.value)}
                 placeholder="e.g., Barcelona"
+                maxLength={100}
+                className="text-sm"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="teamB">Team B</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="teamB" className="text-xs sm:text-sm">Team B</Label>
               <Input
                 id="teamB"
                 value={teamB}
                 onChange={(e) => setTeamB(e.target.value)}
                 placeholder="e.g., Real Madrid"
+                maxLength={100}
+                className="text-sm"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="prediction">Prediction</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label htmlFor="prediction" className="text-xs sm:text-sm">Prediction</Label>
             <Input
               id="prediction"
               value={predictionText}
               onChange={(e) => setPredictionText(e.target.value)}
-              placeholder="e.g., 1X, Over 2.5, Both Teams to Score"
+              placeholder="e.g., 1X, Over 2.5, BTTS"
+              maxLength={200}
+              className="text-sm"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="odds" className="text-sm">Odds</Label>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="odds" className="text-xs sm:text-sm">Odds</Label>
               <Input
                 id="odds"
                 type="number"
                 step="0.01"
+                min="1.01"
+                max="100"
                 value={odds}
                 onChange={(e) => setOdds(e.target.value)}
                 placeholder="e.g., 2.00"
@@ -144,8 +200,8 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confidence" className="text-sm">Confidence (0-100)</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="confidence" className="text-xs sm:text-sm">Confidence (0-100)</Label>
               <Input
                 id="confidence"
                 type="number"
@@ -159,20 +215,20 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm">Match Date</Label>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label className="text-xs sm:text-sm">Match Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal text-sm",
+                      "w-full justify-start text-left font-normal text-xs sm:text-sm h-9 sm:h-10",
                       !matchDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {matchDate ? format(matchDate, "PPP") : <span>Pick a date</span>}
+                    <CalendarIcon className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    {matchDate ? format(matchDate, "PP") : <span>Pick date</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -187,10 +243,10 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
               </Popover>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="sport" className="text-sm">Sport Category</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="sport" className="text-xs sm:text-sm">Sport</Label>
               <Select value={sportCategory} onValueChange={setSportCategory}>
-                <SelectTrigger className="text-sm">
+                <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -206,49 +262,51 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
 
           <Button 
             onClick={addPrediction} 
-            className="w-full"
+            className="w-full text-sm"
             type="button"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Add Match to Bundle
+            Add to Bundle
           </Button>
         </div>
       </div>
 
       {/* Current Predictions Preview - Right Side */}
       <div className="bg-card border border-border rounded-lg p-4 sm:p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg sm:text-xl font-bold text-foreground">Current Predictions</h3>
+        <div className="flex justify-between items-center mb-3 sm:mb-4">
+          <h3 className="text-base sm:text-xl font-bold text-foreground">Current Predictions</h3>
           {predictions.length > 0 && (
-            <Button onClick={clearAll} variant="outline" size="sm" className="text-xs">
+            <Button onClick={clearAll} variant="outline" size="sm" className="text-xs h-7 sm:h-8">
               Clear All
             </Button>
           )}
         </div>
 
         {predictions.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>No predictions added yet</p>
-            <p className="text-sm mt-2">Add matches using the form on the left</p>
+          <div className="text-center py-6 sm:py-8 text-muted-foreground">
+            <p className="text-sm">No predictions added yet</p>
+            <p className="text-xs mt-1.5 sm:mt-2">Add matches using the form</p>
           </div>
         ) : (
           <>
             {/* Booking Code and Platform - At the Top */}
-            <div className="space-y-3 mb-4 pb-4 border-b border-border">
-              <div className="space-y-2">
-                <Label htmlFor="bookingCode">Booking Code</Label>
+            <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-border">
+              <div className="space-y-1.5">
+                <Label htmlFor="bookingCode" className="text-xs sm:text-sm">Booking Code</Label>
                 <Input
                   id="bookingCode"
                   value={bookingCode}
                   onChange={(e) => setBookingCode(e.target.value)}
                   placeholder="Enter booking code"
+                  maxLength={100}
+                  className="text-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="platform">Betting Platform</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="platform" className="text-xs sm:text-sm">Platform</Label>
                 <Select value={bettingPlatform} onValueChange={setBettingPlatform}>
-                  <SelectTrigger className="bg-background">
+                  <SelectTrigger className="bg-background text-sm h-9 sm:h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-popover z-50">
@@ -262,17 +320,17 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
               </div>
             </div>
 
-            <div className="space-y-2 mb-4 max-h-[400px] overflow-y-auto">
+            <div className="space-y-2 mb-3 sm:mb-4 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
               {predictions.map((pred) => (
                 <div
                   key={pred.id}
-                  className="flex justify-between items-start p-3 bg-background border border-border rounded-lg"
+                  className="flex justify-between items-start p-2.5 sm:p-3 bg-background border border-border rounded-lg"
                 >
-                  <div className="flex-1">
-                    <div className="font-semibold text-foreground">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-foreground text-sm truncate">
                       {pred.teamA} vs {pred.teamB}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-xs text-muted-foreground truncate">
                       {pred.predictionText} @ {pred.odds}
                     </div>
                   </div>
@@ -280,24 +338,24 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
                     variant="ghost"
                     size="sm"
                     onClick={() => removePrediction(pred.id)}
-                    className="ml-2"
+                    className="ml-2 h-7 w-7 p-0 flex-shrink-0"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               ))}
             </div>
 
-            <div className="border-t border-border pt-4 space-y-4">
+            <div className="border-t border-border pt-3 sm:pt-4 space-y-3 sm:space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-base font-semibold text-foreground">Total Odds:</span>
-                <span className="text-xl font-bold text-primary">{totalOdds.toFixed(2)}</span>
+                <span className="text-sm font-semibold text-foreground">Total Odds:</span>
+                <span className="text-lg sm:text-xl font-bold text-primary">{totalOdds.toFixed(2)}</span>
               </div>
 
-              <div className="space-y-2">
-                <Label>Prediction Type</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs sm:text-sm">Type</Label>
                 <Select value={predictionType} onValueChange={setPredictionType}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9 sm:h-10 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -309,8 +367,8 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
 
               <Button 
                 onClick={handleSubmit} 
-                className="w-full" 
-                size="lg"
+                className="w-full text-sm" 
+                size="default"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Adding..." : "Add to Predictions"}

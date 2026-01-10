@@ -503,19 +503,19 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="max-w-6xl mx-auto">
           {/* Profile Header */}
-          <Card className="bg-card/80 backdrop-blur border-border mb-8">
-            <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                <div className="relative">
-                  <div className="w-24 h-24 bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center ring-4 ring-primary/20">
-                    <User className="w-12 h-12 text-primary-foreground" />
+          <Card className="bg-card/80 backdrop-blur border-border mb-6 sm:mb-8">
+            <CardContent className="pt-4 sm:pt-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                <div className="relative flex-shrink-0">
+                  <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center ring-4 ring-primary/20">
+                    <User className="w-8 h-8 sm:w-12 sm:h-12 text-primary-foreground" />
                   </div>
                   {profile.featured_achievement && (
                     <div className="absolute -bottom-1 -right-1">
-                      <UserBadge achievementId={profile.featured_achievement} size="lg" />
+                      <UserBadge achievementId={profile.featured_achievement} size="md" />
                     </div>
                   )}
                 </div>
@@ -543,7 +543,7 @@ export default function Profile() {
                       </div>
                     ) : (
                       <>
-                        <h2 className="text-3xl font-bold text-foreground">
+                        <h2 className="text-xl sm:text-3xl font-bold text-foreground">
                           {profile.display_name || user.email.split('@')[0]}
                         </h2>
                         {profile.featured_achievement && (
@@ -618,31 +618,31 @@ export default function Profile() {
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6 pt-6 border-t border-border">
-                <div className="text-center p-4 bg-purple-500/10 rounded-lg">
-                  <Zap className="h-6 w-6 text-purple-500 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-purple-500">{profile.xp_points || 0}</div>
-                  <div className="text-xs text-muted-foreground">XP Points</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-border">
+                <div className="text-center p-2 sm:p-4 bg-purple-500/10 rounded-lg">
+                  <Zap className="h-4 w-4 sm:h-6 sm:w-6 text-purple-500 mx-auto mb-1 sm:mb-2" />
+                  <div className="text-lg sm:text-2xl font-bold text-purple-500">{profile.xp_points || 0}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">XP</div>
                 </div>
-                <div className="text-center p-4 bg-muted/30 rounded-lg">
-                  <Eye className="h-6 w-6 text-primary mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-foreground">{profile.predictions_viewed}</div>
-                  <div className="text-xs text-muted-foreground">Predictions Viewed</div>
+                <div className="text-center p-2 sm:p-4 bg-muted/30 rounded-lg">
+                  <Eye className="h-4 w-4 sm:h-6 sm:w-6 text-primary mx-auto mb-1 sm:mb-2" />
+                  <div className="text-lg sm:text-2xl font-bold text-foreground">{profile.predictions_viewed}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">Viewed</div>
                 </div>
-                <div className="text-center p-4 bg-status-won/10 rounded-lg">
-                  <Target className="h-6 w-6 text-status-won mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-status-won">{profile.correct_predictions}</div>
-                  <div className="text-xs text-muted-foreground">Correct</div>
+                <div className="text-center p-2 sm:p-4 bg-status-won/10 rounded-lg">
+                  <Target className="h-4 w-4 sm:h-6 sm:w-6 text-status-won mx-auto mb-1 sm:mb-2" />
+                  <div className="text-lg sm:text-2xl font-bold text-status-won">{profile.correct_predictions}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">Correct</div>
                 </div>
-                <div className="text-center p-4 bg-primary/10 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-primary mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-primary">{successRate}%</div>
-                  <div className="text-xs text-muted-foreground">Success Rate</div>
+                <div className="text-center p-2 sm:p-4 bg-primary/10 rounded-lg">
+                  <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-primary mx-auto mb-1 sm:mb-2" />
+                  <div className="text-lg sm:text-2xl font-bold text-primary">{successRate}%</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">Rate</div>
                 </div>
-                <div className="text-center p-4 bg-accent/10 rounded-lg">
-                  <Heart className="h-6 w-6 text-accent mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-foreground">{favorites.length}</div>
-                  <div className="text-xs text-muted-foreground">Favorites</div>
+                <div className="text-center p-2 sm:p-4 bg-accent/10 rounded-lg col-span-2 sm:col-span-1">
+                  <Heart className="h-4 w-4 sm:h-6 sm:w-6 text-accent mx-auto mb-1 sm:mb-2" />
+                  <div className="text-lg sm:text-2xl font-bold text-foreground">{favorites.length}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">Favorites</div>
                 </div>
               </div>
             </CardContent>
@@ -650,28 +650,32 @@ export default function Profile() {
 
           {/* Performance Trend Chart */}
           {performanceTrend.length > 0 && (
-            <Card className="bg-card/80 backdrop-blur border-border mb-8">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+            <Card className="bg-card/80 backdrop-blur border-border mb-6 sm:mb-8">
+              <CardHeader className="pb-2 sm:pb-4">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   Performance Trend
                 </CardTitle>
-                <CardDescription>Your success rate over the last 30 days (by week)</CardDescription>
+                <CardDescription className="text-xs sm:text-sm">Success rate over the last 30 days</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+              <CardContent className="px-2 sm:px-6">
+                <ResponsiveContainer width="100%" height={250}>
                   <LineChart data={performanceTrend}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis 
                       dataKey="date" 
                       stroke="hsl(var(--muted-foreground))"
-                      style={{ fontSize: '12px' }}
+                      tick={{ fontSize: 10 }}
+                      interval={0}
+                      angle={-45}
+                      textAnchor="end"
+                      height={50}
                     />
                     <YAxis 
                       stroke="hsl(var(--muted-foreground))"
-                      style={{ fontSize: '12px' }}
+                      tick={{ fontSize: 10 }}
                       domain={[0, 100]}
-                      label={{ value: 'Success Rate (%)', angle: -90, position: 'insideLeft', style: { fill: 'hsl(var(--muted-foreground))' } }}
+                      width={35}
                     />
                     <Tooltip 
                       contentStyle={{ 

@@ -352,21 +352,21 @@ export default function Statistics() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div className="mb-6 sm:mb-8">
+            <div className="flex flex-col gap-4 mb-4 sm:mb-6">
               <div>
-                <h2 className="text-4xl font-bold text-foreground mb-2">Statistics Dashboard</h2>
-                <p className="text-muted-foreground">Performance analytics and insights</p>
+                <h2 className="text-2xl sm:text-4xl font-bold text-foreground mb-1 sm:mb-2">Statistics Dashboard</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">Performance analytics and insights</p>
               </div>
               
               {/* Filters */}
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <div className="flex items-center gap-2">
-                  <Filter className="h-5 w-5 text-muted-foreground" />
+                  <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                   <Select value={dateRange} onValueChange={(value: any) => setDateRange(value)}>
-                    <SelectTrigger className="w-[140px]">
+                    <SelectTrigger className="w-[120px] sm:w-[140px] h-9 text-sm">
                       <SelectValue placeholder="Date Range" />
                     </SelectTrigger>
                     <SelectContent>
@@ -378,7 +378,7 @@ export default function Statistics() {
                 </div>
                 
                 <Select value={sportFilter} onValueChange={setSportFilter}>
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-[120px] sm:w-[140px] h-9 text-sm">
                     <SelectValue placeholder="Sport" />
                   </SelectTrigger>
                   <SelectContent>
@@ -395,12 +395,13 @@ export default function Statistics() {
                   <Button 
                     variant="outline" 
                     size="sm"
+                    className="h-9 text-xs sm:text-sm"
                     onClick={() => {
                       setDateRange('7days');
                       setSportFilter('all');
                     }}
                   >
-                    Reset Filters
+                    Reset
                   </Button>
                 )}
               </div>
@@ -408,74 +409,83 @@ export default function Statistics() {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
             <Card className="bg-card/80 backdrop-blur border-border">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Total Predictions</CardTitle>
-                <Target className="h-5 w-5 text-primary" />
+              <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Total Predictions</CardTitle>
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-foreground">{stats.totalPredictions}</div>
-                <p className="text-xs text-muted-foreground mt-1">{stats.totalBundles} bundles</p>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+                <div className="text-xl sm:text-3xl font-bold text-foreground">{stats.totalPredictions}</div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">{stats.totalBundles} bundles</p>
               </CardContent>
             </Card>
 
             <Card className="bg-card/80 backdrop-blur border-border">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Win Rate</CardTitle>
-                <Percent className="h-5 w-5 text-status-won" />
+              <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Win Rate</CardTitle>
+                <Percent className="h-4 w-4 sm:h-5 sm:w-5 text-status-won" />
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-status-won">{stats.winRate.toFixed(1)}%</div>
-                <p className="text-xs text-muted-foreground mt-1">{stats.wonPredictions} wins, {stats.lostPredictions} losses</p>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+                <div className="text-xl sm:text-3xl font-bold text-status-won">{stats.winRate.toFixed(1)}%</div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">{stats.wonPredictions}W / {stats.lostPredictions}L</p>
               </CardContent>
             </Card>
 
             <Card className="bg-card/80 backdrop-blur border-border">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Average Odds</CardTitle>
-                <TrendingUp className="h-5 w-5 text-accent" />
+              <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Avg Odds</CardTitle>
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-foreground">{stats.averageOdds.toFixed(2)}</div>
-                <p className="text-xs text-muted-foreground mt-1">Across all predictions</p>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+                <div className="text-xl sm:text-3xl font-bold text-foreground">{stats.averageOdds.toFixed(2)}</div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">All predictions</p>
               </CardContent>
             </Card>
 
             <Card className="bg-card/80 backdrop-blur border-border">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
-                <Trophy className="h-5 w-5 text-status-pending" />
+              <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Pending</CardTitle>
+                <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-status-pending" />
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-status-pending">{stats.pendingPredictions}</div>
-                <p className="text-xs text-muted-foreground mt-1">Awaiting results</p>
+              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+                <div className="text-xl sm:text-3xl font-bold text-status-pending">{stats.pendingPredictions}</div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">Awaiting results</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Daily Performance Chart */}
             <Card className="bg-card/80 backdrop-blur border-border">
-              <CardHeader>
-                <CardTitle className="text-foreground">Daily Performance (Last 7 Days)</CardTitle>
-                <CardDescription>Prediction results over time</CardDescription>
+              <CardHeader className="pb-2 sm:pb-4">
+                <CardTitle className="text-sm sm:text-base text-foreground">Daily Performance</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Results over time</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+              <CardContent className="px-2 sm:px-6">
+                <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={dailyStats}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="hsl(var(--muted-foreground))" 
+                      tick={{ fontSize: 10 }}
+                      interval={0}
+                      angle={-45}
+                      textAnchor="end"
+                      height={50}
+                    />
+                    <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} width={30} />
                     <Tooltip 
                       contentStyle={{ 
                         backgroundColor: 'hsl(var(--card))', 
                         border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
+                        borderRadius: '8px',
+                        fontSize: '12px'
                       }} 
                     />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
                     <Bar dataKey="won" fill="hsl(var(--status-won))" name="Won" />
                     <Bar dataKey="lost" fill="hsl(var(--status-lost))" name="Lost" />
                     <Bar dataKey="pending" fill="hsl(var(--status-pending))" name="Pending" />
