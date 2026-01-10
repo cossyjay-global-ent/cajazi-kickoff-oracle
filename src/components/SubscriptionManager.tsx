@@ -8,12 +8,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, CheckCircle, Clock, XCircle, UserPlus, Mail, Search, RefreshCw, Filter, CreditCard, AlertCircle } from "lucide-react";
+import { CalendarIcon, CheckCircle, Clock, XCircle, UserPlus, Mail, Search, RefreshCw, Filter, CreditCard, AlertCircle, Check } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { z } from "zod";
+
+// Validation schema for activation
+const activationSchema = z.object({
+  email: z.string().trim().email("Invalid email format").max(255, "Email too long"),
+});
 
 interface Subscription {
   id: string;
@@ -303,6 +309,63 @@ export const SubscriptionManager = () => {
       fetchAllSubscriptions();
     } catch (error: any) {
       toast.error(error.message || "Failed to extend subscription");
+    }
+  };
+
+  const handleActivateSubscription = async (subId: string, paymentEmail: string | null) => {
+    // Validate email exists
+    if (!paymentEmail) {
+      toast.error("Cannot activate: No email associated with this subscription");
+      return;
+    }
+
+    try {
+      // Validate email format
+      activationSchema.parse({ email: paymentEmail });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0]?.message || "Invalid email format");
+        return;
+      }
+    }
+
+    if (!confirm(`Activate subscription for ${paymentEmail}? This will mark it as active and linked.`)) {
+      return;
+    }
+
+    try {
+      // Check if user exists with this email
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('email', paymentEmail.toLowerCase())
+        .maybeSingle();
+
+      const updateData: any = {
+        status: 'active',
+        registration_status: existingProfile ? 'registered' : 'pending',
+      };
+
+      if (existingProfile) {
+        updateData.user_id = existingProfile.id;
+      }
+
+      const { error } = await supabase
+        .from('subscriptions')
+        .update(updateData)
+        .eq('id', subId);
+
+      if (error) throw error;
+
+      toast.success(
+        existingProfile
+          ? `Subscription activated and linked to ${paymentEmail}`
+          : `Subscription activated for ${paymentEmail} (will auto-link on registration)`
+      );
+      fetchAllSubscriptions();
+    } catch (error: any) {
+      console.error("Activation error:", error);
+      toast.error(error.message || "Failed to activate subscription");
     }
   };
 
@@ -650,26 +713,39 @@ export const SubscriptionManager = () => {
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        {isActive && (
-                          <div className="flex gap-1 justify-end">
+                        <div className="flex gap-1 justify-end">
+                          {status === 'pending' && (
                             <Button
-                              variant="outline"
+                              variant="default"
                               size="sm"
                               className="h-7 text-xs px-2"
-                              onClick={() => handleExtendSubscription(sub.id, sub.expires_at)}
+                              onClick={() => handleActivateSubscription(sub.id, sub.payment_email)}
                             >
-                              +1 Mo
+                              <Check className="h-3 w-3 mr-1" />
+                              Activate
                             </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              className="h-7 text-xs px-2"
-                              onClick={() => handleExpireSubscription(sub.id)}
-                            >
-                              Expire
-                            </Button>
-                          </div>
-                        )}
+                          )}
+                          {isActive && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs px-2"
+                                onClick={() => handleExtendSubscription(sub.id, sub.expires_at)}
+                              >
+                                +1 Mo
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="h-7 text-xs px-2"
+                                onClick={() => handleExpireSubscription(sub.id)}
+                              >
+                                Expire
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -783,26 +859,39 @@ export const SubscriptionManager = () => {
                     </div>
 
                     {/* Actions */}
-                    {isActive && (
-                      <div className="flex gap-2 pt-2 border-t border-border">
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+                      {status === 'pending' && (
                         <Button
-                          variant="outline"
+                          variant="default"
                           size="sm"
                           className="flex-1 h-8 text-xs"
-                          onClick={() => handleExtendSubscription(sub.id, sub.expires_at)}
+                          onClick={() => handleActivateSubscription(sub.id, sub.payment_email)}
                         >
-                          +1 Month
+                          <Check className="h-3 w-3 mr-1" />
+                          Activate
                         </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="flex-1 h-8 text-xs"
-                          onClick={() => handleExpireSubscription(sub.id)}
-                        >
-                          Expire
-                        </Button>
-                      </div>
-                    )}
+                      )}
+                      {isActive && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 h-8 text-xs"
+                            onClick={() => handleExtendSubscription(sub.id, sub.expires_at)}
+                          >
+                            +1 Month
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="flex-1 h-8 text-xs"
+                            onClick={() => handleExpireSubscription(sub.id)}
+                          >
+                            Expire
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 );
               })}
