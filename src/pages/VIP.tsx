@@ -411,6 +411,9 @@ export default function VIP() {
                         <SelectItem value="pending">Pending</SelectItem>
                         <SelectItem value="won">Won</SelectItem>
                         <SelectItem value="lost">Lost</SelectItem>
+                        <SelectItem value="postponed">Postponed</SelectItem>
+                        <SelectItem value="void">Void</SelectItem>
+                        <SelectItem value="canceled">Canceled</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -534,6 +537,8 @@ export default function VIP() {
                                     ? 'bg-status-won text-status-won-foreground shadow-sm' 
                                     : pred.result === 'lost'
                                     ? 'bg-status-lost text-status-lost-foreground shadow-sm'
+                                    : pred.result === 'postponed' || pred.result === 'void' || pred.result === 'canceled'
+                                    ? 'bg-muted text-muted-foreground shadow-sm'
                                     : 'bg-status-pending text-status-pending-foreground shadow-sm'
                                 )}>
                                   {pred.result?.toUpperCase() || 'PENDING'}
@@ -560,6 +565,8 @@ export default function VIP() {
                               ? 'bg-status-won text-status-won-foreground' 
                               : pred.result === 'lost'
                               ? 'bg-status-lost text-status-lost-foreground'
+                              : pred.result === 'postponed' || pred.result === 'void' || pred.result === 'canceled'
+                              ? 'bg-muted text-muted-foreground'
                               : 'bg-status-pending text-status-pending-foreground'
                           )}>
                             {pred.result?.toUpperCase() || 'PENDING'}
@@ -587,6 +594,8 @@ export default function VIP() {
                             ? 'bg-status-won text-status-won-foreground shadow-md' 
                             : bundle.final_status === 'lost'
                             ? 'bg-status-lost text-status-lost-foreground shadow-md'
+                            : bundle.final_status === 'postponed' || bundle.final_status === 'void' || bundle.final_status === 'canceled'
+                            ? 'bg-muted text-muted-foreground shadow-md'
                             : 'bg-status-pending text-status-pending-foreground shadow-md'
                         )}>
                           {bundle.final_status?.toUpperCase() || 'PENDING'}

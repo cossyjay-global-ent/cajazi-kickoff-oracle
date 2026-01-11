@@ -910,10 +910,16 @@ export default function Profile() {
                               <div className={`px-4 py-2 rounded-lg text-sm font-semibold ${
                                 prediction.result === 'won' ? 'bg-status-won/10 text-status-won' :
                                 prediction.result === 'lost' ? 'bg-status-lost/10 text-status-lost' :
+                                prediction.result === 'postponed' ? 'bg-muted text-muted-foreground' :
+                                prediction.result === 'void' ? 'bg-muted text-muted-foreground' :
+                                prediction.result === 'canceled' ? 'bg-muted text-muted-foreground' :
                                 'bg-status-pending/10 text-status-pending'
                               }`}>
                                 {prediction.result === 'won' ? '✓ Won' :
                                  prediction.result === 'lost' ? '✗ Lost' :
+                                 prediction.result === 'postponed' ? '⏸ Postponed' :
+                                 prediction.result === 'void' ? '⊘ Void' :
+                                 prediction.result === 'canceled' ? '✕ Canceled' :
                                  '⏳ Pending'}
                               </div>
                             </div>
