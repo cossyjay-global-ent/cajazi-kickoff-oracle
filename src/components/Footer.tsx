@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { z } from "zod";
 import { Link } from "react-router-dom";
+import { CommentWithReplies } from "@/components/CommentWithReplies";
 
 const commentSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
@@ -114,6 +115,11 @@ export const Footer = () => {
   return (
     <footer className="bg-card border-t border-border mt-auto">
       <div className="container mx-auto px-3 sm:px-4 py-8 sm:py-12">
+        {/* Recent Comments with Admin Replies */}
+        <div className="mb-8">
+          <CommentWithReplies />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-8">
           {/* Comment Section */}
           <Card className="bg-card/80">
