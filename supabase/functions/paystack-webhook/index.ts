@@ -149,22 +149,21 @@ serve(async (req) => {
           )
         }
         
-        // If subscription exists but is pending/expired/cancelled, we can update it
-        // but NEVER set status to pending if it was already activated
+        // If subscription exists but is pending/expired/cancelled, update and ACTIVATE it
         const newExpiresAt = new Date()
         newExpiresAt.setDate(newExpiresAt.getDate() + durationDays)
         
         const updateData: any = {
           plan_type: planType,
           expires_at: newExpiresAt.toISOString(),
+          status: 'active', // Always activate immediately upon payment
+          started_at: new Date().toISOString(),
         }
         
-        // Only set status to active if user is registered, otherwise leave as-is
+        // Link to user if they exist
         if (existingProfile) {
-          updateData.status = 'active'
           updateData.user_id = existingProfile.id
           updateData.registration_status = 'registered'
-          updateData.started_at = new Date().toISOString()
         }
         
         console.log('Updating existing subscription:', existingSub.id, 'with data:', updateData)
@@ -207,18 +206,14 @@ serve(async (req) => {
       }
 
       // Create subscription record
-      // CRITICAL: Set status based on whether user is registered
-      // - If user exists: status = 'active' (immediate access)
-      // - If user doesn't exist: status = 'pending' (requires admin activation or registration)
-      const isRegisteredUser = !!existingProfile;
-      
+      // AUTOMATICALLY ACTIVATE ALL SUBSCRIBERS upon payment
       const subscriptionData: any = {
         payment_email: customerEmail,
         plan_type: planType,
-        status: isRegisteredUser ? 'active' : 'pending',
+        status: 'active', // Always active immediately upon payment
         started_at: new Date().toISOString(),
         expires_at: expiresAt.toISOString(),
-        registration_status: isRegisteredUser ? 'registered' : 'pending',
+        registration_status: existingProfile ? 'registered' : 'pending',
       }
 
       // If user exists, link subscription immediately
