@@ -10,7 +10,7 @@ import { InstallPrompt } from "@/components/InstallPrompt";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
-import Livescore from "./pages/Livescore";
+
 import Predictions from "./pages/Predictions";
 import Statistics from "./pages/Statistics";
 import VIP from "./pages/VIP";
@@ -42,7 +42,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/livescore" element={<Livescore />} />
+          
           <Route path="/predictions" element={<Predictions />} />
           <Route path="/statistics" element={<Statistics />} />
           <Route path="/vip" element={<VIP />} />
