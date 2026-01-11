@@ -33,50 +33,9 @@ export default function Home() {
   useEffect(() => {
     if (user) {
       fetchFeaturedPredictions();
-      checkSubscription();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (user && hasSubscription) {
       fetchVipPredictions();
     }
-  }, [user, hasSubscription]);
-
-  const checkSubscription = async () => {
-    if (!user) return;
-
-    // First check by user_id
-    let { data } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .gt('expires_at', new Date().toISOString())
-      .maybeSingle();
-
-    // If not found, check by email for recently linked subscriptions
-    if (!data && user.email) {
-      const { data: emailData } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('payment_email', user.email.toLowerCase())
-        .eq('status', 'active')
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle();
-      
-      if (emailData) {
-        // Auto-link this subscription to the user
-        await supabase
-          .from('subscriptions')
-          .update({ user_id: user.id, registration_status: 'registered' })
-          .eq('id', emailData.id);
-        data = emailData;
-      }
-    }
-
-    setHasSubscription(!!data);
-  };
+  }, [user]);
 
   const fetchFeaturedPredictions = async () => {
     const { data } = await supabase
@@ -92,6 +51,7 @@ export default function Home() {
   };
 
   const fetchVipPredictions = async () => {
+    // RLS enforces VIP access at database level - just fetch directly
     const { data } = await supabase
       .from('predictions')
       .select('*')
@@ -99,8 +59,12 @@ export default function Home() {
       .order('created_at', { ascending: false })
       .limit(3);
 
-    if (data) {
+    if (data && data.length > 0) {
       setVipPredictions(data);
+      setHasSubscription(true);
+    } else {
+      setVipPredictions([]);
+      setHasSubscription(false);
     }
   };
 
