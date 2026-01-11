@@ -116,11 +116,6 @@ export const Header = () => {
                 Home
               </Button>
             </Link>
-            <Link to="/livescore">
-              <Button variant={isActive("/livescore") ? "default" : "ghost"} size="sm">
-                Livescore
-              </Button>
-            </Link>
             <Link to="/predictions">
               <Button variant={isActive("/predictions") ? "default" : "ghost"} size="sm">
                 Predictions
@@ -218,11 +213,6 @@ export const Header = () => {
                   <Link to="/" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant={isActive("/") ? "default" : "ghost"} className="w-full justify-start">
                       Home
-                    </Button>
-                  </Link>
-                  <Link to="/livescore" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant={isActive("/livescore") ? "default" : "ghost"} className="w-full justify-start">
-                      Livescore
                     </Button>
                   </Link>
                   <Link to="/predictions" onClick={() => setMobileMenuOpen(false)}>
