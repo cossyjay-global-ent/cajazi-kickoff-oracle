@@ -175,17 +175,26 @@ export const SubscriptionManager = () => {
     }
   };
 
+  // CRITICAL: Status is determined by the database 'status' field
+  // Do NOT re-classify based on user_id or registration_status
   const getSubscriptionStatus = (sub: Subscription): SubscriptionStatus => {
     const now = new Date();
     const expiresAt = new Date(sub.expires_at);
     
+    // Cancelled takes priority
     if (sub.status === 'cancelled') return 'cancelled';
+    
+    // Expired: either explicitly expired or past expiry date
     if (sub.status === 'expired' || expiresAt < now) return 'expired';
+    
+    // Pending: only if database status is 'pending'
     if (sub.status === 'pending') return 'pending';
-    if (sub.status === 'active' && sub.user_id && sub.registration_status === 'registered') return 'active';
-    // If status is active but no user linked, treat as pending
-    if (!sub.user_id || sub.registration_status === 'pending') return 'pending';
-    return 'active';
+    
+    // Active: if database says active and not expired
+    if (sub.status === 'active') return 'active';
+    
+    // Fallback for unknown statuses
+    return 'pending';
   };
 
   const getStatusBadge = (status: SubscriptionStatus) => {
@@ -376,7 +385,7 @@ export const SubscriptionManager = () => {
     }
   };
 
-  // CRITICAL: Handle activation with proper date updates
+  // CRITICAL: Handle activation with proper database updates and error handling
   const handleActivateSubscription = async (subId: string, paymentEmail: string | null) => {
     if (!paymentEmail) {
       toast.error("Cannot activate: No email associated with this subscription");
@@ -392,29 +401,46 @@ export const SubscriptionManager = () => {
       }
     }
 
-    if (!confirm(`Activate subscription for ${paymentEmail}? This will:\n- Set status to active\n- Update start date to now\n- Recalculate expiry based on plan`)) {
+    // Get subscription details first
+    const sub = subscriptions.find(s => s.id === subId);
+    if (!sub) {
+      toast.error("Subscription not found");
+      return;
+    }
+
+    // Prevent activating non-pending subscriptions
+    const currentStatus = getSubscriptionStatus(sub);
+    if (currentStatus === 'active') {
+      toast.error("This subscription is already active");
+      return;
+    }
+    if (currentStatus === 'expired') {
+      toast.error("Cannot activate an expired subscription. Use 'Extend' instead.");
+      return;
+    }
+
+    if (!confirm(`Activate subscription for ${paymentEmail}?\n\nThis will:\n- Set status to ACTIVE\n- Update start date to now\n- Recalculate expiry based on plan (${PLAN_LABELS[sub.plan_type] || sub.plan_type})`)) {
       return;
     }
 
     setActivating(true);
     try {
-      // Get subscription details for plan type
-      const sub = subscriptions.find(s => s.id === subId);
-      if (!sub) {
-        toast.error("Subscription not found");
-        return;
-      }
-
       // Check if user exists with this email
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id, email')
         .eq('email', paymentEmail.toLowerCase())
         .maybeSingle();
 
+      if (profileError) {
+        console.error("Profile lookup error:", profileError);
+        // Continue without linking - don't block activation
+      }
+
       const now = new Date();
       const newExpiresAt = calculateExpiryDate(sub.plan_type, now);
 
+      // Build update payload
       const updateData: Record<string, unknown> = {
         status: 'active',
         started_at: now.toISOString(),
@@ -422,28 +448,49 @@ export const SubscriptionManager = () => {
         registration_status: existingProfile ? 'registered' : 'pending',
       };
 
+      // Link to user if profile exists
       if (existingProfile) {
         updateData.user_id = existingProfile.id;
       }
 
-      const { error } = await supabase
+      console.log("Activating subscription:", subId, "with data:", updateData);
+
+      // Perform the update
+      const { data: updatedSub, error: updateError } = await supabase
         .from('subscriptions')
         .update(updateData)
-        .eq('id', subId);
+        .eq('id', subId)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (updateError) {
+        console.error("Database update error:", updateError);
+        throw new Error(`Database error: ${updateError.message}`);
+      }
+
+      if (!updatedSub) {
+        throw new Error("Update returned no data - possible RLS policy issue");
+      }
+
+      // Verify the update actually persisted
+      if (updatedSub.status !== 'active') {
+        throw new Error(`Update verification failed: status is "${updatedSub.status}" instead of "active"`);
+      }
+
+      console.log("Subscription activated successfully:", updatedSub);
 
       toast.success(
         existingProfile
-          ? `Subscription activated and linked to ${paymentEmail}`
-          : `Subscription activated for ${paymentEmail} (will auto-link on registration)`
+          ? `✓ Subscription activated and linked to ${paymentEmail}`
+          : `✓ Subscription activated for ${paymentEmail} (will auto-link on registration)`
       );
       
+      // Refresh the list to reflect changes
       await fetchAllSubscriptions();
     } catch (error: unknown) {
       console.error("Activation error:", error);
       const message = error instanceof Error ? error.message : "Failed to activate subscription";
-      toast.error(message);
+      toast.error(`Activation failed: ${message}`);
     } finally {
       setActivating(false);
     }
@@ -609,6 +656,13 @@ export const SubscriptionManager = () => {
   const getSource = (sub: Subscription) => {
     if (sub.user_id && sub.registration_status === 'registered') {
       return 'Linked';
+    }
+    // Active but unlinked - still came from Paystack
+    if (!sub.user_id && sub.status === 'active') {
+      return 'Active (Unlinked)';
+    }
+    if (sub.registration_status === 'pending' && sub.status === 'pending') {
+      return 'Paystack (Pending)';
     }
     if (sub.registration_status === 'pending') {
       return 'Paystack (Unlinked)';

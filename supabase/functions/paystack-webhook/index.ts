@@ -149,19 +149,26 @@ serve(async (req) => {
       }
 
       // Create subscription record
+      // CRITICAL: Set status based on whether user is registered
+      // - If user exists: status = 'active' (immediate access)
+      // - If user doesn't exist: status = 'pending' (requires admin activation or registration)
+      const isRegisteredUser = !!existingProfile;
+      
       const subscriptionData: any = {
         payment_email: customerEmail,
         plan_type: planType,
-        status: 'active',
+        status: isRegisteredUser ? 'active' : 'pending',
         started_at: new Date().toISOString(),
         expires_at: expiresAt.toISOString(),
-        registration_status: existingProfile ? 'registered' : 'pending',
+        registration_status: isRegisteredUser ? 'registered' : 'pending',
       }
 
       // If user exists, link subscription immediately
       if (existingProfile) {
         subscriptionData.user_id = existingProfile.id
       }
+      
+      console.log('Creating subscription with data:', subscriptionData)
 
       const { data: newSub, error: subError } = await supabase
         .from('subscriptions')
