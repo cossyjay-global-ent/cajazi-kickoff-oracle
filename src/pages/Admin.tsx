@@ -7,8 +7,10 @@ import { toast } from "sonner";
 import { PredictionBuilder, PredictionFormData } from "@/components/PredictionBuilder";
 import { SubscriptionManager } from "@/components/SubscriptionManager";
 import { CommentManager } from "@/components/CommentManager";
+import { EditBundleDialog } from "@/components/EditBundleDialog";
 import { z } from "zod";
 import { sendNotificationEmail, getUserEmail } from "@/hooks/useEmailNotifications";
+import { Pencil } from "lucide-react";
 
 // Validation schema for predictions
 const predictionSchema = z.object({
@@ -43,6 +45,8 @@ export default function Admin() {
   const [userRoles, setUserRoles] = useState<Record<string, string[]>>({});
   const [bundles, setBundles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingBundle, setEditingBundle] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -362,14 +366,28 @@ export default function Admin() {
                         </span>
                       </div>
                     </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="self-end sm:self-start text-xs"
-                      onClick={() => handleDeleteBundle(bundle.id)}
-                    >
-                      Delete
-                    </Button>
+                    <div className="flex gap-2 self-end sm:self-start">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => {
+                          setEditingBundle(bundle);
+                          setEditDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => handleDeleteBundle(bundle.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                   
                   {/* Fixture List & Results - Mobile Card View */}
@@ -496,6 +514,14 @@ export default function Admin() {
           </div>
         </div>
       </div>
+
+      {/* Edit Bundle Dialog */}
+      <EditBundleDialog
+        bundle={editingBundle}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSave={fetchBundles}
+      />
     </div>
   );
 }
