@@ -96,13 +96,15 @@ export default function VIP() {
     if (!user) return;
 
     try {
-      // First check by user_id
+      // First check by user_id (pick most recent active if duplicates exist)
       const { data: userIdData, error: userIdError } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('status', 'active')
         .gt('expires_at', new Date().toISOString())
+        .order('expires_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (userIdError) {
@@ -119,6 +121,8 @@ export default function VIP() {
           .eq('payment_email', user.email.toLowerCase())
           .eq('status', 'active')
           .gt('expires_at', new Date().toISOString())
+          .order('expires_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
         
         if (emailError) {
