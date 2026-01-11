@@ -6,14 +6,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Keep in sync with client plan types
-const PLAN_DURATIONS_DAYS: Record<string, number> = {
-  "2_weeks": 14,
-  "1_month": 30,
-  "6_months": 180,
-  "yearly": 365,
-  "1_year": 365,
-};
+// Calculate plan duration based on plan_type pattern matching
+function getPlanDurationDays(planType: string): number {
+  const plan = (planType || "").toLowerCase();
+  
+  if (plan.includes("2") && plan.includes("week")) return 14;
+  if (plan.includes("1") && plan.includes("month")) return 30;
+  if (plan.includes("6") && plan.includes("month")) return 180;
+  if (plan.includes("year") || plan.includes("12") && plan.includes("month")) return 365;
+  
+  // Default to 14 days (2 weeks) as per user's SQL
+  return 14;
+}
 
 type ActivateBody = {
   subscription_id: string;
@@ -88,7 +92,7 @@ serve(async (req) => {
       return json(400, { error: "Cannot activate an expired subscription" });
     }
 
-    const durationDays = PLAN_DURATIONS_DAYS[sub.plan_type] ?? 30;
+    const durationDays = getPlanDurationDays(sub.plan_type);
     const newExpiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
     // Auto-link if a profile exists for payment_email (but do not require it)
