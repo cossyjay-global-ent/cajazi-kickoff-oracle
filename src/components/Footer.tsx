@@ -205,6 +205,10 @@ export const Footer = () => {
           <div className="text-xs sm:text-sm text-muted-foreground text-center">
             &copy; {new Date().getFullYear()} KickoffPrediction. All rights reserved.
           </div>
+
+          <div className="text-xs text-muted-foreground text-center max-w-2xl">
+            Disclaimer: KickoffPrediction provides football predictions for informational and entertainment purposes only. We do not guarantee outcomes or profits. Please play responsibly.
+          </div>
         </div>
       </div>
     </footer>
