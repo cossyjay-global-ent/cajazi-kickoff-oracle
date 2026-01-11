@@ -17,6 +17,10 @@ import VIP from "./pages/VIP";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import ResponsibleGaming from "./pages/ResponsibleGaming";
 import History from "./pages/History";
 import Leaderboard from "./pages/Leaderboard";
 import Following from "./pages/Following";
@@ -45,6 +49,10 @@ const AppContent = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/responsible-gaming" element={<ResponsibleGaming />} />
           <Route path="/history" element={<History />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/user/:userId" element={<PublicProfile />} />

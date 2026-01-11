@@ -105,7 +105,7 @@ export const Header = () => {
           <Link to="/" className="flex items-center gap-3">
             <Trophy className="h-10 w-10 text-primary" />
             <div>
-              <h1 className="text-xl font-bold text-foreground">Cajazi Prediction</h1>
+              <h1 className="text-xl font-bold text-foreground">KickoffPrediction</h1>
               <p className="text-xs text-muted-foreground">Winning Starts Here</p>
             </div>
           </Link>

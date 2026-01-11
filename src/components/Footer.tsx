@@ -185,18 +185,19 @@ export const Footer = () => {
         <div className="flex flex-col items-center gap-4 sm:gap-6">
           <div className="flex items-center gap-2">
             <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-            <h3 className="text-base sm:text-lg font-bold text-foreground">Cajazi Prediction</h3>
+            <h3 className="text-base sm:text-lg font-bold text-foreground">KickoffPrediction</h3>
           </div>
           
           <div className="flex flex-wrap justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
-            <Link to="/about#about" className="hover:text-primary transition-colors">About</Link>
-            <Link to="/about#contact" className="hover:text-primary transition-colors">Contact</Link>
-            <Link to="/about#privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
-            <Link to="/about#terms" className="hover:text-primary transition-colors">Terms of Service</Link>
+            <Link to="/about" className="hover:text-primary transition-colors">About</Link>
+            <Link to="/contact" className="hover:text-primary transition-colors">Contact</Link>
+            <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
+            <Link to="/responsible-gaming" className="hover:text-primary transition-colors">Responsible Gaming</Link>
           </div>
           
           <div className="text-xs sm:text-sm text-muted-foreground text-center">
-            &copy; {new Date().getFullYear()} Cajazi Prediction. All rights reserved.
+            &copy; {new Date().getFullYear()} KickoffPrediction. All rights reserved.
           </div>
         </div>
       </div>
