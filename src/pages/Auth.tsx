@@ -67,6 +67,13 @@ export default function Auth() {
           toast.error(error.message);
         }
       } else {
+        // Ensure profile exists & link subscriptions
+        try {
+          await supabase.rpc('ensure_profile_and_link_subscription');
+        } catch {
+          // Non-blocking; RLS may hide error on first login
+        }
+
         toast.success("Login successful!");
         navigate("/");
       }
@@ -107,6 +114,13 @@ export default function Auth() {
           toast.error(error.message);
         }
       } else {
+        // Ensure profile exists & link subscriptions
+        try {
+          await supabase.rpc('ensure_profile_and_link_subscription');
+        } catch {
+          // Profile trigger may already exist; non-blocking
+        }
+
         toast.success("Registration successful! You can now login.");
         setEmail("");
         setPassword("");

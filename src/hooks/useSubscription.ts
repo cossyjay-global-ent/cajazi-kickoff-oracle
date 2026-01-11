@@ -35,6 +35,11 @@ export const useSubscription = (userId?: string, userEmail?: string) => {
     }
 
     try {
+      // Ensure profile + subscriptions are linked on first call
+      try {
+        await supabase.rpc('ensure_profile_and_link_subscription');
+      } catch { /* Non-blocking */ }
+
       // First try to find subscription by user_id (linked subscription)
       if (userId) {
         const { data, error } = await supabase

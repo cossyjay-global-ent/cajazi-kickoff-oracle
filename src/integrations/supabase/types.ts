@@ -464,6 +464,7 @@ export type Database = {
         Args: { p_points: number; p_reason: string; p_user_id: string }
         Returns: undefined
       }
+      ensure_profile_and_link_subscription: { Args: never; Returns: undefined }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
     }
     Enums: {
