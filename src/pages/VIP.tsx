@@ -44,9 +44,16 @@ export default function VIP() {
       setLoading(false);
       return;
     }
-    
     setUser(session.user);
     setIsAuthenticated(true);
+    
+    // Ensure profile + link subscriptions
+    try {
+      await supabase.rpc('ensure_profile_and_link_subscription');
+    } catch {
+      // Non-blocking
+    }
+
     setLoading(false);
 
     // Listen for auth changes
