@@ -324,43 +324,13 @@ export const SubscriptionManager = () => {
     let errorCount = 0;
 
     try {
-      // Get all emails to check for existing profiles
-      const emails = subsToActivate
-        .map(sub => sub.payment_email?.toLowerCase())
-        .filter((email): email is string => !!email);
-
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .in('email', emails);
-
-      const profileMap = new Map(profiles?.map(p => [p.email.toLowerCase(), p.id]) || []);
-
-      // Process each subscription
       for (const sub of subsToActivate) {
         try {
-          const now = new Date();
-          const newExpiresAt = calculateExpiryDate(sub.plan_type, now);
-          const emailLower = sub.payment_email?.toLowerCase();
-          const userId = emailLower ? profileMap.get(emailLower) : null;
+          const { error } = await supabase.functions.invoke("admin-activate-subscription", {
+            body: { subscription_id: sub.id },
+          });
 
-          const updateData: Record<string, unknown> = {
-            status: 'active',
-            started_at: now.toISOString(),
-            expires_at: newExpiresAt.toISOString(),
-            registration_status: userId ? 'registered' : 'pending',
-          };
-
-          if (userId) {
-            updateData.user_id = userId;
-          }
-
-          const { error } = await supabase
-            .from('subscriptions')
-            .update(updateData)
-            .eq('id', sub.id);
-
-          if (error) throw error;
+          if (error) throw new Error(error.message);
           successCount++;
         } catch (err) {
           console.error(`Failed to activate ${sub.id}:`, err);
@@ -387,17 +357,16 @@ export const SubscriptionManager = () => {
 
   // CRITICAL: Handle activation with proper database updates and error handling
   const handleActivateSubscription = async (subId: string, paymentEmail: string | null) => {
-    if (!paymentEmail) {
-      toast.error("Cannot activate: No email associated with this subscription");
-      return;
-    }
+    const emailForDisplay = paymentEmail?.trim() || null;
 
-    try {
-      activationSchema.parse({ email: paymentEmail });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast.error(error.errors[0]?.message || "Invalid email format");
-        return;
+    if (emailForDisplay) {
+      try {
+        activationSchema.parse({ email: emailForDisplay });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          toast.error(error.errors[0]?.message || "Invalid email format");
+          return;
+        }
       }
     }
 
@@ -419,73 +388,37 @@ export const SubscriptionManager = () => {
       return;
     }
 
-    if (!confirm(`Activate subscription for ${paymentEmail}?\n\nThis will:\n- Set status to ACTIVE\n- Update start date to now\n- Recalculate expiry based on plan (${PLAN_LABELS[sub.plan_type] || sub.plan_type})`)) {
+    if (!confirm(`Activate subscription for ${paymentEmail ?? 'this customer'}?\n\nThis will:\n- Set status to ACTIVE\n- Update start date to now\n- Recalculate expiry based on plan (${PLAN_LABELS[sub.plan_type] || sub.plan_type})`)) {
       return;
     }
 
     setActivating(true);
     try {
-      // Check if user exists with this email
-      const { data: existingProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .eq('email', paymentEmail.toLowerCase())
-        .maybeSingle();
+      const { data, error } = await supabase.functions.invoke("admin-activate-subscription", {
+        body: { subscription_id: subId },
+      });
 
-      if (profileError) {
-        console.error("Profile lookup error:", profileError);
-        // Continue without linking - don't block activation
+      if (error) {
+        console.error("Activation function error:", error);
+        throw new Error(error.message || "Activation failed");
       }
 
-      const now = new Date();
-      const newExpiresAt = calculateExpiryDate(sub.plan_type, now);
-
-      // Build update payload
-      const updateData: Record<string, unknown> = {
-        status: 'active',
-        started_at: now.toISOString(),
-        expires_at: newExpiresAt.toISOString(),
-        registration_status: existingProfile ? 'registered' : 'pending',
-      };
-
-      // Link to user if profile exists
-      if (existingProfile) {
-        updateData.user_id = existingProfile.id;
-      }
-
-      console.log("Activating subscription:", subId, "with data:", updateData);
-
-      // Perform the update
-      const { data: updatedSub, error: updateError } = await supabase
-        .from('subscriptions')
-        .update(updateData)
-        .eq('id', subId)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error("Database update error:", updateError);
-        throw new Error(`Database error: ${updateError.message}`);
-      }
-
+      const updatedSub = (data as any)?.subscription as Partial<Subscription> | undefined;
       if (!updatedSub) {
-        throw new Error("Update returned no data - possible RLS policy issue");
+        throw new Error("Activation failed: no subscription returned");
       }
 
-      // Verify the update actually persisted
-      if (updatedSub.status !== 'active') {
-        throw new Error(`Update verification failed: status is "${updatedSub.status}" instead of "active"`);
-      }
-
-      console.log("Subscription activated successfully:", updatedSub);
+      // Immediate UI consistency (optimistic), then refresh from DB
+      setSubscriptions((prev) =>
+        prev.map((s) => (s.id === subId ? ({ ...s, ...updatedSub } as Subscription) : s))
+      );
 
       toast.success(
-        existingProfile
-          ? `✓ Subscription activated and linked to ${paymentEmail}`
-          : `✓ Subscription activated for ${paymentEmail} (will auto-link on registration)`
+        updatedSub.user_id
+          ? `✓ Subscription activated and linked to ${paymentEmail ?? 'this customer'}`
+          : `✓ Subscription activated for ${paymentEmail ?? 'this customer'} (will auto-link on registration)`
       );
-      
-      // Refresh the list to reflect changes
+
       await fetchAllSubscriptions();
     } catch (error: unknown) {
       console.error("Activation error:", error);
