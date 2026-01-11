@@ -20,8 +20,22 @@ export const useRealtimePredictions = (onUpdate?: () => void) => {
           
           // Show notification if result changed
           if (prediction.result && prediction.result !== 'pending') {
-            const resultText = prediction.result === 'won' ? '🎉 Won!' : '❌ Lost';
-            const variant = prediction.result === 'won' ? 'default' : 'destructive';
+            let resultText = '🎉 Won!';
+            let variant = 'default';
+            
+            if (prediction.result === 'lost') {
+              resultText = '❌ Lost';
+              variant = 'destructive';
+            } else if (prediction.result === 'postponed') {
+              resultText = '⏸ Postponed';
+              variant = 'default';
+            } else if (prediction.result === 'void') {
+              resultText = '⊘ Void';
+              variant = 'default';
+            } else if (prediction.result === 'canceled') {
+              resultText = '✕ Canceled';
+              variant = 'default';
+            }
             
             toast({
               title: `Prediction Result Updated`,
@@ -49,8 +63,22 @@ export const useRealtimePredictions = (onUpdate?: () => void) => {
           
           // Show notification if final_status changed
           if (bundle.final_status && bundle.final_status !== 'pending') {
-            const resultText = bundle.final_status === 'won' ? '🎉 Won!' : '❌ Lost';
-            const variant = bundle.final_status === 'won' ? 'default' : 'destructive';
+            let resultText = '🎉 Won!';
+            let variant = 'default';
+            
+            if (bundle.final_status === 'lost') {
+              resultText = '❌ Lost';
+              variant = 'destructive';
+            } else if (bundle.final_status === 'postponed') {
+              resultText = '⏸ Postponed';
+              variant = 'default';
+            } else if (bundle.final_status === 'void') {
+              resultText = '⊘ Void';
+              variant = 'default';
+            } else if (bundle.final_status === 'canceled') {
+              resultText = '✕ Canceled';
+              variant = 'default';
+            }
             
             toast({
               title: `Bundle Result Updated`,

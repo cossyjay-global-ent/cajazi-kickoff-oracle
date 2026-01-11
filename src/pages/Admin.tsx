@@ -424,6 +424,9 @@ export default function Admin() {
                                   <option value="pending">PENDING</option>
                                   <option value="won">WON</option>
                                   <option value="lost">LOST</option>
+                                  <option value="postponed">POSTPONED</option>
+                                  <option value="void">VOID</option>
+                                  <option value="canceled">CANCELED</option>
                                 </select>
                               </td>
                             </tr>
@@ -449,6 +452,9 @@ export default function Admin() {
                             <option value="pending">PENDING</option>
                             <option value="won">WON</option>
                             <option value="lost">LOST</option>
+                            <option value="postponed">POSTPONED</option>
+                            <option value="void">VOID</option>
+                            <option value="canceled">CANCELED</option>
                           </select>
                         </div>
                       ))}
@@ -474,6 +480,9 @@ export default function Admin() {
                         <option value="pending">PENDING</option>
                         <option value="won">WON</option>
                         <option value="lost">LOST</option>
+                        <option value="postponed">POSTPONED</option>
+                        <option value="void">VOID</option>
+                        <option value="canceled">CANCELED</option>
                       </select>
                     </div>
                   </div>

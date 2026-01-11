@@ -159,6 +159,9 @@ export default function History() {
                               <span className={`font-medium ${
                                 item.prediction.result === 'won' ? 'text-green-600' :
                                 item.prediction.result === 'lost' ? 'text-red-600' :
+                                item.prediction.result === 'postponed' ? 'text-muted-foreground' :
+                                item.prediction.result === 'void' ? 'text-muted-foreground' :
+                                item.prediction.result === 'canceled' ? 'text-muted-foreground' :
                                 'text-yellow-600'
                               }`}>
                                 {item.prediction.result?.toUpperCase() || 'PENDING'}
@@ -177,6 +180,9 @@ export default function History() {
                               <span className={`font-medium ${
                                 item.bundle.final_status === 'won' ? 'text-green-600' :
                                 item.bundle.final_status === 'lost' ? 'text-red-600' :
+                                item.bundle.final_status === 'postponed' ? 'text-muted-foreground' :
+                                item.bundle.final_status === 'void' ? 'text-muted-foreground' :
+                                item.bundle.final_status === 'canceled' ? 'text-muted-foreground' :
                                 'text-yellow-600'
                               }`}>
                                 {item.bundle.final_status?.toUpperCase() || 'PENDING'}
@@ -225,6 +231,9 @@ export default function History() {
                               <span className={`font-medium ${
                                 item.prediction.result === 'won' ? 'text-green-600' :
                                 item.prediction.result === 'lost' ? 'text-red-600' :
+                                item.prediction.result === 'postponed' ? 'text-muted-foreground' :
+                                item.prediction.result === 'void' ? 'text-muted-foreground' :
+                                item.prediction.result === 'canceled' ? 'text-muted-foreground' :
                                 'text-yellow-600'
                               }`}>
                                 {item.prediction.result?.toUpperCase() || 'PENDING'}
@@ -243,6 +252,9 @@ export default function History() {
                               <span className={`font-medium ${
                                 item.bundle.final_status === 'won' ? 'text-green-600' :
                                 item.bundle.final_status === 'lost' ? 'text-red-600' :
+                                item.bundle.final_status === 'postponed' ? 'text-muted-foreground' :
+                                item.bundle.final_status === 'void' ? 'text-muted-foreground' :
+                                item.bundle.final_status === 'canceled' ? 'text-muted-foreground' :
                                 'text-yellow-600'
                               }`}>
                                 {item.bundle.final_status?.toUpperCase() || 'PENDING'}

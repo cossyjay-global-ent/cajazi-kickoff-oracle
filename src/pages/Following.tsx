@@ -226,7 +226,19 @@ const Following = () => {
     if (result === 'won') {
       return <Badge className="bg-chart-2 text-white">Won</Badge>;
     }
-    return <Badge variant="destructive">Lost</Badge>;
+    if (result === 'lost') {
+      return <Badge variant="destructive">Lost</Badge>;
+    }
+    if (result === 'postponed') {
+      return <Badge variant="outline">Postponed</Badge>;
+    }
+    if (result === 'void') {
+      return <Badge variant="outline">Void</Badge>;
+    }
+    if (result === 'canceled') {
+      return <Badge variant="outline">Canceled</Badge>;
+    }
+    return <Badge variant="secondary">{result}</Badge>;
   };
 
   const DiscoverSection = () => (
@@ -325,6 +337,9 @@ const Following = () => {
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="won">Won</SelectItem>
                       <SelectItem value="lost">Lost</SelectItem>
+                      <SelectItem value="postponed">Postponed</SelectItem>
+                      <SelectItem value="void">Void</SelectItem>
+                      <SelectItem value="canceled">Canceled</SelectItem>
                     </SelectContent>
                   </Select>
 
