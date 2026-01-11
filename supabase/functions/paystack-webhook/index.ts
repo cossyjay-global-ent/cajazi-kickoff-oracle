@@ -131,19 +131,77 @@ serve(async (req) => {
 
       console.log('Existing profile:', existingProfile)
 
-      // Check for existing subscription with this reference to prevent duplicates
+      // CRITICAL FIX: Check for ANY existing subscription for this email
+      // If subscription is ACTIVE, do NOT touch it at all (admin activated)
       const { data: existingSub } = await supabase
         .from('subscriptions')
-        .select('id')
+        .select('id, status, expires_at')
         .eq('payment_email', customerEmail)
-        .eq('plan_type', planType)
-        .gte('expires_at', new Date().toISOString())
         .maybeSingle()
 
       if (existingSub) {
-        console.log('Active subscription already exists for this email and plan')
+        // HARD RULE: If subscription is ACTIVE, never overwrite it
+        if (existingSub.status === 'active') {
+          console.log('BLOCKED: Active subscription exists - webhook will not touch it. ID:', existingSub.id)
+          return new Response(
+            JSON.stringify({ message: 'Active subscription exists - no changes made' }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+        
+        // If subscription exists but is pending/expired/cancelled, we can update it
+        // but NEVER set status to pending if it was already activated
+        const newExpiresAt = new Date()
+        newExpiresAt.setDate(newExpiresAt.getDate() + durationDays)
+        
+        const updateData: any = {
+          plan_type: planType,
+          expires_at: newExpiresAt.toISOString(),
+        }
+        
+        // Only set status to active if user is registered, otherwise leave as-is
+        if (existingProfile) {
+          updateData.status = 'active'
+          updateData.user_id = existingProfile.id
+          updateData.registration_status = 'registered'
+          updateData.started_at = new Date().toISOString()
+        }
+        
+        console.log('Updating existing subscription:', existingSub.id, 'with data:', updateData)
+        
+        const { data: updatedSub, error: updateError } = await supabase
+          .from('subscriptions')
+          .update(updateData)
+          .eq('id', existingSub.id)
+          .select()
+          .single()
+        
+        if (updateError) {
+          console.error('Error updating subscription:', updateError)
+          return new Response(
+            JSON.stringify({ error: 'Failed to update subscription' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+        
+        console.log('Subscription updated successfully:', updatedSub.id)
+        
+        // Send notification if user exists and subscription is now active
+        if (existingProfile && updatedSub.status === 'active') {
+          await supabase.from('notifications').insert({
+            user_id: existingProfile.id,
+            type: 'subscription_activated',
+            title: 'VIP Subscription Activated!',
+            message: `Your ${planType.replace('_', ' ')} VIP subscription is now active until ${newExpiresAt.toLocaleDateString()}.`,
+          })
+        }
+        
         return new Response(
-          JSON.stringify({ message: 'Subscription already active' }),
+          JSON.stringify({ 
+            success: true, 
+            message: 'Existing subscription updated',
+            subscription_id: updatedSub.id 
+          }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
