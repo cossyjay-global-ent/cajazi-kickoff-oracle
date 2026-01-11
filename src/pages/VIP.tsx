@@ -97,7 +97,7 @@ export default function VIP() {
 
     try {
       // First check by user_id
-      let { data, error } = await supabase
+      const { data: userIdData, error: userIdError } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
@@ -105,8 +105,14 @@ export default function VIP() {
         .gt('expires_at', new Date().toISOString())
         .maybeSingle();
 
+      if (userIdError) {
+        console.error('Error checking subscription by user_id:', userIdError);
+      }
+
+      let subscriptionData = userIdData;
+
       // If not found by user_id, check by email (for recently linked subscriptions)
-      if (!data && user.email) {
+      if (!subscriptionData && user.email) {
         const { data: emailData, error: emailError } = await supabase
           .from('subscriptions')
           .select('*')
@@ -115,23 +121,21 @@ export default function VIP() {
           .gt('expires_at', new Date().toISOString())
           .maybeSingle();
         
+        if (emailError) {
+          console.error('Error checking subscription by email:', emailError);
+        }
+        
         if (emailData && !emailError) {
           // Auto-link this subscription to the user
           await supabase
             .from('subscriptions')
             .update({ user_id: user.id, registration_status: 'registered' })
             .eq('id', emailData.id);
-          data = emailData;
+          subscriptionData = emailData;
         }
       }
 
-      if (error) {
-        console.error('Error checking subscription:', error);
-        toast.error('Failed to check subscription status');
-        return;
-      }
-
-      const hasActiveSubscription = !!data;
+      const hasActiveSubscription = !!subscriptionData;
       setHasSubscription(hasActiveSubscription);
       
       // If subscription status changed to inactive, force back to plans view
@@ -142,7 +146,7 @@ export default function VIP() {
       }
     } catch (error) {
       console.error('Unexpected error:', error);
-      toast.error('An unexpected error occurred');
+      // Don't show error toast for network issues, just log it
     }
   };
 
