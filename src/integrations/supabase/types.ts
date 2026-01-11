@@ -420,7 +420,12 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      active_vip_users: {
+        Row: {
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       award_xp_points: {
