@@ -48,6 +48,8 @@ export const useSubscription = (userId?: string, userEmail?: string) => {
           .eq('user_id', userId)
           .eq('status', 'active')
           .gt('expires_at', new Date().toISOString())
+          .order('expires_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (!error && data) {
@@ -66,6 +68,8 @@ export const useSubscription = (userId?: string, userEmail?: string) => {
           .eq('payment_email', userEmail.toLowerCase())
           .eq('status', 'active')
           .gt('expires_at', new Date().toISOString())
+          .order('expires_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (!error && data) {
