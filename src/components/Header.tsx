@@ -160,13 +160,6 @@ export const Header = () => {
                 </Button>
               </Link>
             )}
-            {isAdmin && (
-              <Link to="/admin">
-                <Button variant={isActive("/admin") ? "default" : "ghost"} size="sm">
-                  Admin
-                </Button>
-              </Link>
-            )}
           </nav>
 
           <div className="flex items-center gap-2">
@@ -262,13 +255,6 @@ export const Header = () => {
                       <Button variant={isActive("/following") ? "default" : "ghost"} className="w-full justify-start">
                         <Users className="h-4 w-4 mr-2" />
                         Following Feed
-                      </Button>
-                    </Link>
-                  )}
-                  {isAdmin && (
-                    <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant={isActive("/admin") ? "default" : "ghost"} className="w-full justify-start">
-                        Admin
                       </Button>
                     </Link>
                   )}

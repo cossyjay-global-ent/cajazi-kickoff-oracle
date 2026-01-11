@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Lock, Palette, Pencil, Check, X, Moon, Sun, Monitor } from "lucide-react";
+import { User, Lock, Palette, Pencil, Check, X, Moon, Sun, Monitor, Shield, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { FullPageState } from "@/components/FullPageState";
 
@@ -16,6 +16,7 @@ export default function Settings() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   // Profile state
   const [displayName, setDisplayName] = useState("");
@@ -41,8 +42,22 @@ export default function Settings() {
   useEffect(() => {
     if (user) {
       fetchProfile();
+      checkAdminStatus();
     }
   }, [user]);
+
+  const checkAdminStatus = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+    
+    setIsAdmin(!!data);
+  };
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -190,7 +205,7 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profile</span>
@@ -203,6 +218,12 @@ export default function Settings() {
               <Palette className="h-4 w-4" />
               <span className="hidden sm:inline">Theme</span>
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="admin" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                <span className="hidden sm:inline">Admin</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Profile Tab */}
@@ -394,6 +415,38 @@ export default function Settings() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Admin Tab */}
+          {isAdmin && (
+            <TabsContent value="admin">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    Admin Panel
+                  </CardTitle>
+                  <CardDescription>
+                    Access administrative features
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={() => navigate('/admin')}
+                    className="w-full flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      Open Admin Dashboard
+                    </span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <p className="text-sm text-muted-foreground text-center mt-4">
+                    Manage predictions, users, subscriptions, and more
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
