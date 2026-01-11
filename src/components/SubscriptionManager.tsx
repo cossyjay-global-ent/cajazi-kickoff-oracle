@@ -175,26 +175,38 @@ export const SubscriptionManager = () => {
     }
   };
 
-  // CRITICAL: Status is determined by the database 'status' field
-  // Do NOT re-classify based on user_id or registration_status
+  // Always pass the JWT explicitly to backend functions (prevents missing-auth edge cases).
+  const invokeAdminFunction = useCallback(
+    async <TData = any>(functionName: string, body: Record<string, unknown>) => {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) throw new Error(sessionError.message);
+      if (!session?.access_token) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase.functions.invoke(functionName, {
+        body,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw new Error(error.message);
+      return data as TData;
+    },
+    []
+  );
+
+  // CRITICAL: UI must reflect database state ONLY.
+  // Do not derive status from user_id, registration_status, or time comparisons.
   const getSubscriptionStatus = (sub: Subscription): SubscriptionStatus => {
-    const now = new Date();
-    const expiresAt = new Date(sub.expires_at);
-    
-    // Cancelled takes priority
-    if (sub.status === 'cancelled') return 'cancelled';
-    
-    // Expired: either explicitly expired or past expiry date
-    if (sub.status === 'expired' || expiresAt < now) return 'expired';
-    
-    // Pending: only if database status is 'pending'
-    if (sub.status === 'pending') return 'pending';
-    
-    // Active: if database says active and not expired
-    if (sub.status === 'active') return 'active';
-    
-    // Fallback for unknown statuses
-    return 'pending';
+    const raw = String(sub.status || "").toLowerCase();
+    if (raw === "active" || raw === "pending" || raw === "expired" || raw === "cancelled") {
+      return raw;
+    }
+    return "pending";
   };
 
   const getStatusBadge = (status: SubscriptionStatus) => {
@@ -308,41 +320,55 @@ export const SubscriptionManager = () => {
 
   // Bulk activation handler
   const handleBulkActivate = async () => {
-    const subsToActivate = pendingSubscriptions.filter(sub => selectedIds.has(sub.id));
-    
+    const subsToActivate = pendingSubscriptions.filter((sub) => selectedIds.has(sub.id));
+
     if (subsToActivate.length === 0) {
       toast.error("No pending subscriptions selected");
       return;
     }
 
-    if (!confirm(`Activate ${subsToActivate.length} subscription(s)?\n\nThis will:\n- Set status to active\n- Update start dates to now\n- Recalculate expiry dates based on plans`)) {
+    if (
+      !confirm(
+        `Activate ${subsToActivate.length} subscription(s)?\n\nThis will:\n- Set status to active\n- Update start dates to now\n- Recalculate expiry dates based on plans`
+      )
+    ) {
       return;
     }
 
     setBulkActivating(true);
     let successCount = 0;
-    let errorCount = 0;
+    const failures: Array<{ id: string; reason: string }> = [];
 
     try {
       for (const sub of subsToActivate) {
         try {
-          const { error } = await supabase.functions.invoke("admin-activate-subscription", {
-            body: { subscription_id: sub.id },
+          await invokeAdminFunction("admin-activate-subscription", {
+            subscription_id: sub.id,
           });
-
-          if (error) throw new Error(error.message);
           successCount++;
         } catch (err) {
+          const reason = err instanceof Error ? err.message : "Unknown error";
           console.error(`Failed to activate ${sub.id}:`, err);
-          errorCount++;
+          failures.push({ id: sub.id, reason });
         }
       }
 
-      if (successCount > 0) {
+      const errorCount = failures.length;
+
+      if (successCount > 0 && errorCount === 0) {
         toast.success(`Successfully activated ${successCount} subscription(s)`);
-      }
-      if (errorCount > 0) {
+      } else if (successCount > 0 && errorCount > 0) {
+        toast.error(`Activated ${successCount}, failed ${errorCount}`);
+      } else {
         toast.error(`Failed to activate ${errorCount} subscription(s)`);
+      }
+
+      if (failures.length > 0) {
+        const preview = failures
+          .slice(0, 3)
+          .map((f) => `${f.id.slice(0, 8)}: ${f.reason}`)
+          .join(" | ");
+        toast.error(`Errors: ${preview}${failures.length > 3 ? " …" : ""}`);
       }
 
       setSelectedIds(new Set());
@@ -355,7 +381,7 @@ export const SubscriptionManager = () => {
     }
   };
 
-  // CRITICAL: Handle activation with proper database updates and error handling
+  // CRITICAL: Handle activation server-side ONLY (no direct client .update())
   const handleActivateSubscription = async (subId: string, paymentEmail: string | null) => {
     const emailForDisplay = paymentEmail?.trim() || null;
 
@@ -370,53 +396,49 @@ export const SubscriptionManager = () => {
       }
     }
 
-    // Get subscription details first
-    const sub = subscriptions.find(s => s.id === subId);
+    const sub = subscriptions.find((s) => s.id === subId);
     if (!sub) {
       toast.error("Subscription not found");
       return;
     }
 
-    // Prevent activating non-pending subscriptions
-    const currentStatus = getSubscriptionStatus(sub);
-    if (currentStatus === 'active') {
+    // UI checks ONLY against the database status field
+    const dbStatus = getSubscriptionStatus(sub);
+    if (dbStatus === "active") {
       toast.error("This subscription is already active");
       return;
     }
-    if (currentStatus === 'expired') {
-      toast.error("Cannot activate an expired subscription. Use 'Extend' instead.");
+    if (dbStatus === "cancelled") {
+      toast.error("Cannot activate a cancelled subscription");
+      return;
+    }
+    if (dbStatus === "expired") {
+      toast.error("Cannot activate an expired subscription");
       return;
     }
 
-    if (!confirm(`Activate subscription for ${paymentEmail ?? 'this customer'}?\n\nThis will:\n- Set status to ACTIVE\n- Update start date to now\n- Recalculate expiry based on plan (${PLAN_LABELS[sub.plan_type] || sub.plan_type})`)) {
+    if (
+      !confirm(
+        `Activate subscription for ${paymentEmail ?? "this customer"}?\n\nThis will:\n- Set status to ACTIVE\n- Update start date to now\n- Recalculate expiry based on plan (${PLAN_LABELS[sub.plan_type] || sub.plan_type})`
+      )
+    ) {
       return;
     }
 
     setActivating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("admin-activate-subscription", {
-        body: { subscription_id: subId },
-      });
-
-      if (error) {
-        console.error("Activation function error:", error);
-        throw new Error(error.message || "Activation failed");
-      }
-
-      const updatedSub = (data as any)?.subscription as Partial<Subscription> | undefined;
-      if (!updatedSub) {
-        throw new Error("Activation failed: no subscription returned");
-      }
-
-      // Immediate UI consistency (optimistic), then refresh from DB
-      setSubscriptions((prev) =>
-        prev.map((s) => (s.id === subId ? ({ ...s, ...updatedSub } as Subscription) : s))
+      const data = await invokeAdminFunction<{ subscription: Subscription }>(
+        "admin-activate-subscription",
+        { subscription_id: subId }
       );
+
+      const updatedSub = data?.subscription;
+      if (!updatedSub) throw new Error("Activation failed: no subscription returned");
 
       toast.success(
         updatedSub.user_id
-          ? `✓ Subscription activated and linked to ${paymentEmail ?? 'this customer'}`
-          : `✓ Subscription activated for ${paymentEmail ?? 'this customer'} (will auto-link on registration)`
+          ? `✓ Subscription activated and linked to ${paymentEmail ?? "this customer"}`
+          : `✓ Subscription activated for ${paymentEmail ?? "this customer"} (unlinked until registration)`
       );
 
       await fetchAllSubscriptions();
@@ -429,7 +451,7 @@ export const SubscriptionManager = () => {
     }
   };
 
-  // Manual activation via dialog
+  // Manual activation via dialog (server-side only)
   const handleManualActivation = async () => {
     if (!newEmail.trim()) {
       toast.error("Please enter an email address");
@@ -449,36 +471,24 @@ export const SubscriptionManager = () => {
     setActivating(true);
 
     try {
-      // Check if user exists
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .eq('email', emailLower)
-        .maybeSingle();
+      const data = await invokeAdminFunction<{ subscription: Subscription }>(
+        "admin-create-subscription",
+        {
+          email: emailLower,
+          plan_type: planType,
+          expires_at: expiresAt ? expiresAt.toISOString() : undefined,
+        }
+      );
 
-      const now = new Date();
-      const calculatedExpiry = expiresAt || calculateExpiryDate(planType, now);
-
-      const subscriptionData = {
-        payment_email: emailLower,
-        plan_type: planType,
-        status: 'active',
-        started_at: now.toISOString(),
-        expires_at: calculatedExpiry.toISOString(),
-        registration_status: existingProfile ? 'registered' : 'pending',
-        user_id: existingProfile?.id || null,
-      };
-
-      const { error } = await supabase.from('subscriptions').insert([subscriptionData]);
-
-      if (error) throw error;
+      const created = data?.subscription;
+      if (!created) throw new Error("Create failed: no subscription returned");
 
       toast.success(
-        existingProfile 
-          ? `Subscription activated for ${emailLower}` 
-          : `Subscription created for ${emailLower} - will link when they register`
+        created.user_id
+          ? `Subscription activated for ${emailLower}`
+          : `Subscription activated for ${emailLower} (unlinked until registration)`
       );
-      
+
       setDialogOpen(false);
       setNewEmail("");
       setPlanType("1_month");
@@ -493,7 +503,7 @@ export const SubscriptionManager = () => {
     }
   };
 
-  // Link subscription to registered user
+  // Link subscription to registered user (server-side, and MUST NOT change status)
   const handleLinkToUser = async () => {
     if (!selectedSubForLink || !selectedUserId) {
       toast.error("Please select a user to link");
@@ -501,22 +511,16 @@ export const SubscriptionManager = () => {
     }
 
     try {
-      const selectedUser = registeredUsers.find(u => u.id === selectedUserId);
+      const selectedUser = registeredUsers.find((u) => u.id === selectedUserId);
       if (!selectedUser) {
         toast.error("Selected user not found");
         return;
       }
 
-      const { error } = await supabase
-        .from('subscriptions')
-        .update({
-          user_id: selectedUserId,
-          registration_status: 'registered',
-          status: 'active',
-        })
-        .eq('id', selectedSubForLink.id);
-
-      if (error) throw error;
+      await invokeAdminFunction<{ subscription: Subscription }>("admin-link-subscription", {
+        subscription_id: selectedSubForLink.id,
+        user_id: selectedUserId,
+      });
 
       toast.success(`Subscription linked to ${selectedUser.email}`);
       setLinkDialogOpen(false);
@@ -540,12 +544,9 @@ export const SubscriptionManager = () => {
     if (!confirm("Expire this subscription? This action cannot be undone.")) return;
 
     try {
-      const { error } = await supabase
-        .from('subscriptions')
-        .update({ status: 'expired', expires_at: new Date().toISOString() })
-        .eq('id', subId);
-
-      if (error) throw error;
+      await invokeAdminFunction<{ subscription: Subscription }>("admin-expire-subscription", {
+        subscription_id: subId,
+      });
       toast.success("Subscription expired");
       await fetchAllSubscriptions();
     } catch (error: unknown) {
@@ -554,17 +555,12 @@ export const SubscriptionManager = () => {
     }
   };
 
-  const handleExtendSubscription = async (subId: string, currentExpiry: string) => {
-    const newExpiry = new Date(currentExpiry);
-    newExpiry.setMonth(newExpiry.getMonth() + 1);
-
+  const handleExtendSubscription = async (subId: string, _currentExpiry: string) => {
     try {
-      const { error } = await supabase
-        .from('subscriptions')
-        .update({ expires_at: newExpiry.toISOString(), status: 'active' })
-        .eq('id', subId);
-
-      if (error) throw error;
+      await invokeAdminFunction<{ subscription: Subscription }>("admin-extend-subscription", {
+        subscription_id: subId,
+        months: 1,
+      });
       toast.success("Subscription extended by 1 month");
       await fetchAllSubscriptions();
     } catch (error: unknown) {
