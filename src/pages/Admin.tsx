@@ -6,6 +6,7 @@ import { FullPageState } from "@/components/FullPageState";
 import { toast } from "sonner";
 import { PredictionBuilder, PredictionFormData } from "@/components/PredictionBuilder";
 import { SubscriptionManager } from "@/components/SubscriptionManager";
+import { CommentManager } from "@/components/CommentManager";
 import { z } from "zod";
 import { sendNotificationEmail, getUserEmail } from "@/hooks/useEmailNotifications";
 
@@ -321,6 +322,10 @@ export default function Admin() {
 
         <div className="mb-6">
           <SubscriptionManager />
+        </div>
+
+        <div className="mb-6">
+          <CommentManager />
         </div>
 
         <div className="bg-card border border-border rounded-lg p-4 sm:p-6 mb-6">
