@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phone, Mail } from "lucide-react";
+import { Phone, Mail, Shield } from "lucide-react";
 
 const About = () => {
   return (
@@ -8,22 +8,16 @@ const About = () => {
         {/* About Section */}
         <Card id="about">
           <CardHeader>
-            <CardTitle className="text-3xl">Cajazi Prediction</CardTitle>
-            <CardDescription className="text-lg">
-              Your trusted platform for insightful forecasts, strategic guidance, and responsible prediction services
-            </CardDescription>
+            <CardTitle className="text-3xl">About KickoffPrediction</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              We provide accurate, data-driven insights to help you make informed decisions while ensuring fairness, 
-              integrity, and transparency in all our activities.
+              KickoffPrediction is a football analytics and prediction platform built to provide
+              accurate match insights, statistics, and premium VIP predictions. Our goal is to
+              deliver reliable, data-driven information that helps users make informed decisions.
             </p>
             <p className="text-muted-foreground">
-              At Cajazi Prediction, we are dedicated to offering reliable and well-researched predictions across various fields. 
-              Our goal is to empower users with valuable insights that promote informed choices and responsible participation.
-            </p>
-            <p className="text-muted-foreground">
-              We uphold professionalism, accuracy, and user satisfaction as our core principles.
+              We are committed to transparency, user trust, and continuous improvement of our services.
             </p>
           </CardContent>
         </Card>
@@ -31,14 +25,20 @@ const About = () => {
         {/* Contact Section */}
         <Card id="contact">
           <CardHeader>
-            <CardTitle className="text-2xl">Contact Us</CardTitle>
+            <CardTitle className="text-2xl">Contact</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              We value your feedback and inquiries. For support, partnership opportunities, or general questions, 
-              please reach out to us via:
+              If you need support, have inquiries, or wish to contact us, please use the details below:
             </p>
             <div className="space-y-3">
+              <a 
+                href="mailto:support@cosmas.dev"
+                className="flex items-center gap-2 text-primary hover:underline"
+              >
+                <Mail className="h-5 w-5" />
+                <span>Email: support@cosmas.dev</span>
+              </a>
               <a 
                 href="https://wa.me/447350005190" 
                 target="_blank" 
@@ -46,18 +46,11 @@ const About = () => {
                 className="flex items-center gap-2 text-primary hover:underline"
               >
                 <Phone className="h-5 w-5" />
-                <span>WhatsApp: +44 7350 005190</span>
-              </a>
-              <a 
-                href="mailto:info@cajaziprediction.com"
-                className="flex items-center gap-2 text-primary hover:underline"
-              >
-                <Mail className="h-5 w-5" />
-                <span>Email: info@cajaziprediction.com</span>
+                <span>WhatsApp (Support Only): +44 7350 005190</span>
               </a>
             </div>
-            <p className="text-muted-foreground">
-              Our support team is available to assist you with any questions or concerns.
+            <p className="text-sm text-muted-foreground italic">
+              WhatsApp is strictly for customer support only.
             </p>
           </CardContent>
         </Card>
@@ -69,16 +62,17 @@ const About = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              Your privacy is important to us. At Cajazi Prediction, we ensure that all user data and personal information 
-              are handled with the highest level of security and confidentiality. We do not share or sell user data to 
-              third parties without consent.
+              KickoffPrediction respects your privacy and is committed to protecting your personal data.
+              We collect only the information necessary to operate our services, improve user experience,
+              and ensure platform security.
             </p>
             <p className="text-muted-foreground">
-              By using our services, you agree to our data collection and usage practices as described in this policy.
+              Your personal information is never sold or shared with third parties except where required
+              by law or to support essential service functionality.
             </p>
-            <p className="text-muted-foreground font-semibold">
-              You must be 18 years or older to use our services. We do not knowingly collect personal information from 
-              individuals under 18.
+            <p className="text-muted-foreground">
+              By using this website, you agree to the collection and use of information in accordance
+              with this Privacy Policy.
             </p>
           </CardContent>
         </Card>
@@ -90,15 +84,40 @@ const About = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              By accessing and using Cajazi Prediction, you agree to comply with our terms and conditions. Users are 
-              expected to engage responsibly and respectfully within our platform.
+              By accessing or using KickoffPrediction, you agree to comply with these Terms of Service.
             </p>
             <p className="text-muted-foreground">
-              We reserve the right to modify or update these terms at any time, and continued use of our services 
-              indicates acceptance of such changes.
+              All football predictions and sports insights provided on this website are for
+              informational purposes only. We do not guarantee match outcomes, and no content
+              should be considered financial or betting advice.
             </p>
             <p className="text-muted-foreground">
-              We promote responsible usage and encourage all users to make informed, ethical, and lawful decisions.
+              Users are solely responsible for how they use the information provided on this platform.
+              KickoffPrediction shall not be held liable for any losses incurred.
+            </p>
+            <p className="text-muted-foreground">
+              We reserve the right to modify, update, or discontinue any part of the website or services
+              at any time without prior notice.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Responsible Gaming Section */}
+        <Card id="responsible-gaming">
+          <CardHeader>
+            <CardTitle className="text-2xl flex items-center gap-2">
+              <Shield className="h-6 w-6" />
+              Responsible Gaming (18+)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              KickoffPrediction is intended for users aged 18 years and above.
+            </p>
+            <p className="text-muted-foreground">
+              We promote responsible gaming and do not encourage excessive or irresponsible betting.
+              If you feel that gambling is becoming a problem, please seek help from a professional
+              support organization.
             </p>
           </CardContent>
         </Card>
