@@ -15,6 +15,7 @@ import Predictions from "./pages/Predictions";
 import Statistics from "./pages/Statistics";
 import VIP from "./pages/VIP";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -47,6 +48,7 @@ const AppContent = () => {
           <Route path="/statistics" element={<Statistics />} />
           <Route path="/vip" element={<VIP />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />

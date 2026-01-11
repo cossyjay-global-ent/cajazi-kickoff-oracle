@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Trophy, Menu, Users, Shield } from "lucide-react";
+import { Trophy, Menu, Users, Shield, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
@@ -141,6 +141,12 @@ export const Header = () => {
                 Profile
               </Button>
             </Link>
+            <Link to="/settings">
+              <Button variant={isActive("/settings") ? "default" : "ghost"} size="sm">
+                <Settings className="h-4 w-4 mr-1" />
+                Settings
+              </Button>
+            </Link>
             <Link to="/leaderboard">
               <Button variant={isActive("/leaderboard") ? "default" : "ghost"} size="sm">
                 Leaderboard
@@ -238,6 +244,12 @@ export const Header = () => {
                   <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant={isActive("/profile") ? "default" : "ghost"} className="w-full justify-start">
                       Profile
+                    </Button>
+                  </Link>
+                  <Link to="/settings" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant={isActive("/settings") ? "default" : "ghost"} className="w-full justify-start">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Settings
                     </Button>
                   </Link>
                   <Link to="/leaderboard" onClick={() => setMobileMenuOpen(false)}>
