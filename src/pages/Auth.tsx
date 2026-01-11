@@ -33,6 +33,7 @@ export default function Auth() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -125,6 +126,31 @@ export default function Auth() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    const trimmed = email.trim();
+
+    if (!trimmed) {
+      toast.error("Enter your email above first.");
+      return;
+    }
+
+    try {
+      setForgotLoading(true);
+
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Password reset email sent. Check your inbox.");
+      }
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -202,9 +228,14 @@ export default function Auth() {
                   Remember me
                 </label>
               </div>
-              <a href="#" className="text-xs sm:text-sm text-primary hover:underline">
-                Forgot password?
-              </a>
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={forgotLoading}
+                className="text-xs sm:text-sm text-primary hover:underline disabled:opacity-60 disabled:pointer-events-none"
+              >
+                {forgotLoading ? "Sending…" : "Forgot password?"}
+              </button>
             </div>
           )}
 

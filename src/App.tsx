@@ -10,6 +10,7 @@ import { InstallPrompt } from "@/components/InstallPrompt";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 
 import Predictions from "./pages/Predictions";
 import Statistics from "./pages/Statistics";
@@ -43,7 +44,8 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<Auth />} />
-          
+          <Route path="/reset-password" element={<ResetPassword />} />
+
           <Route path="/predictions" element={<Predictions />} />
           <Route path="/statistics" element={<Statistics />} />
           <Route path="/vip" element={<VIP />} />
