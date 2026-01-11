@@ -75,10 +75,11 @@ export default function VIP() {
   }, [hasSubscription]);
 
   useEffect(() => {
-    if (hasSubscription && currentView === "predictions") {
+    // Fetch predictions when in predictions view - RLS enforces access
+    if (currentView === "predictions") {
       fetchVIPBundles();
     }
-  }, [hasSubscription, selectedDate, currentView]);
+  }, [selectedDate, currentView]);
 
   useEffect(() => {
     applyFilters();
@@ -139,12 +140,6 @@ export default function VIP() {
   };
 
   const fetchVIPBundles = async () => {
-    // Guard: Don't fetch if no subscription
-    if (!hasSubscription) {
-      setBundles([]);
-      return;
-    }
-
     setLoadingBundles(true);
     try {
       const startOfDay = new Date(selectedDate);
@@ -153,6 +148,7 @@ export default function VIP() {
       const endOfDay = new Date(selectedDate);
       endOfDay.setHours(23, 59, 59, 999);
 
+      // RLS enforces VIP access at database level - just fetch directly
       const { data, error } = await supabase
         .from('prediction_bundles')
         .select(`
@@ -165,15 +161,23 @@ export default function VIP() {
         .order('created_at', { ascending: false });
 
       if (error) {
+        // If RLS blocks access, data will be empty (not an error)
         console.error('Error fetching bundles:', error);
-        toast.error('Failed to load predictions');
+        setBundles([]);
         return;
       }
 
-      setBundles(data || []);
+      // If data returns, user has valid subscription (RLS passed)
+      const bundlesData = data || [];
+      setBundles(bundlesData);
+      
+      // Update subscription state based on successful data fetch
+      if (bundlesData.length > 0) {
+        setHasSubscription(true);
+      }
     } catch (error) {
       console.error('Unexpected error:', error);
-      toast.error('An unexpected error occurred');
+      setBundles([]);
     } finally {
       setLoadingBundles(false);
     }
