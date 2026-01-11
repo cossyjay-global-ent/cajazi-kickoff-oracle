@@ -239,6 +239,10 @@ export default function VIP() {
       toast.error("Please log in to subscribe.");
       return;
     }
+    if (!isScriptLoaded) {
+      toast.error("VIP subscription is temporarily unavailable. Please try again later or contact support@cosmas.dev.");
+      return;
+    }
     initiatePayment(plan, user.email);
   };
 
@@ -356,14 +360,20 @@ export default function VIP() {
                       size="sm"
                       onClick={() => handlePlanSelect(plan)}
                       disabled={isPaymentLoading || !isScriptLoaded}
+                      title={!isScriptLoaded ? "VIP subscription is temporarily unavailable. Please try again later or contact support@cosmas.dev." : ""}
                     >
                       {isPaymentLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <CreditCard className="h-4 w-4" />
                       )}
-                      {isPaymentLoading ? "Processing..." : "Subscribe"}
+                      {isPaymentLoading ? "Processing..." : !isScriptLoaded ? "Unavailable" : "Subscribe"}
                     </Button>
+                    {!isScriptLoaded && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Temporarily unavailable. Contact support@cosmas.dev
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
