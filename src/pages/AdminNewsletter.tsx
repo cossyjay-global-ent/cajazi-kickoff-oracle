@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -157,10 +158,16 @@ export default function AdminNewsletter() {
 
   const formatContent = (html: string) => {
     // Convert newlines to <br> and wrap paragraphs
-    return html
+    const formatted = html
       .split("\n\n")
       .map(p => `<p>${p.replace(/\n/g, "<br>")}</p>`)
       .join("");
+    
+    // Sanitize HTML to prevent XSS attacks
+    return DOMPurify.sanitize(formatted, {
+      ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'u', 'a', 'ul', 'ol', 'li', 'strong', 'em'],
+      ALLOWED_ATTR: ['href', 'target', 'rel']
+    });
   };
 
   if (loading) {
