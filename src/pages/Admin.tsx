@@ -10,7 +10,8 @@ import { CommentManager } from "@/components/CommentManager";
 import { EditBundleDialog } from "@/components/EditBundleDialog";
 import { z } from "zod";
 import { sendNotificationEmail, getUserEmail } from "@/hooks/useEmailNotifications";
-import { Pencil } from "lucide-react";
+import { Pencil, Mail } from "lucide-react";
+import { Link } from "react-router-dom";
 
 // Validation schema for predictions
 const predictionSchema = z.object({
@@ -318,7 +319,15 @@ export default function Admin() {
   return (
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6">Admin Panel</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Admin Panel</h2>
+          <Button asChild variant="outline">
+            <Link to="/admin/newsletter">
+              <Mail className="h-4 w-4 mr-2" />
+              Newsletter Manager
+            </Link>
+          </Button>
+        </div>
 
         <div className="mb-6">
           <PredictionBuilder onSubmit={handleAddPredictions} />
