@@ -13,6 +13,7 @@ import { CalendarIcon, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { BookingCodesDisplay } from "@/components/BookingCodesDisplay";
 
 export default function Predictions() {
   const [bundles, setBundles] = useState<any[]>([]);
@@ -61,7 +62,8 @@ export default function Predictions() {
       .from('prediction_bundles')
       .select(`
         *,
-        predictions (*)
+        predictions (*),
+        prediction_booking_codes (*)
       `)
       .eq('prediction_type', 'free')
       .gte('created_at', startOfDay.toISOString())
@@ -239,14 +241,12 @@ export default function Predictions() {
                 >
                   {/* Bundle Header */}
                   <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b-2 border-border">
-                    {bundle.booking_code && (
-                      <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-primary/5 rounded-lg border border-primary/20">
-                        <span className="text-muted-foreground text-xs sm:text-sm">Code: </span>
-                        <span className="font-mono font-bold text-primary text-lg sm:text-2xl">{bundle.booking_code}</span>
-                        <span className="text-muted-foreground ml-2 sm:ml-3 text-xs sm:text-sm">on</span>
-                        <span className="font-semibold text-foreground ml-1 sm:ml-2 text-sm">{bundle.betting_platform || 'football.com'}</span>
-                      </div>
-                    )}
+                    {/* Multi-Platform Booking Codes Display */}
+                    <BookingCodesDisplay
+                      codes={bundle.prediction_booking_codes || []}
+                      legacyCode={bundle.booking_code}
+                      legacyPlatform={bundle.betting_platform}
+                    />
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-2 sm:mb-3">
                       <div className="font-bold text-foreground text-lg sm:text-2xl">
                         Package #{bundle.id.slice(0, 8)}

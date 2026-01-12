@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { FullPageState } from "@/components/FullPageState";
 import { toast } from "sonner";
-import { PredictionBuilder, PredictionFormData } from "@/components/PredictionBuilder";
+import { PredictionBuilder, PredictionFormData, PlatformCodeData } from "@/components/PredictionBuilder";
 import { SubscriptionManager } from "@/components/SubscriptionManager";
 import { CommentManager } from "@/components/CommentManager";
 import { EditBundleDialog } from "@/components/EditBundleDialog";
@@ -12,6 +12,7 @@ import { z } from "zod";
 import { sendNotificationEmail, getUserEmail } from "@/hooks/useEmailNotifications";
 import { Pencil, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
+import { BookingCodesDisplay } from "@/components/BookingCodesDisplay";
 
 // Validation schema for predictions
 const predictionSchema = z.object({
@@ -143,7 +144,8 @@ export default function Admin() {
       .from('prediction_bundles')
       .select(`
         *,
-        predictions (*)
+        predictions (*),
+        prediction_booking_codes (*)
       `)
       .order('created_at', { ascending: false });
 
@@ -194,7 +196,11 @@ export default function Admin() {
     }
   };
 
-  const handleAddPredictions = async (predictions: PredictionFormData[], predictionType: string, bookingCode: string, bettingPlatform: string) => {
+  const handleAddPredictions = async (
+    predictions: PredictionFormData[], 
+    predictionType: string, 
+    platformCodes: PlatformCodeData[]
+  ) => {
     // Validate input data
     try {
       bundleSchema.parse({ predictions, predictionType });
@@ -218,6 +224,9 @@ export default function Admin() {
       .join(", ")
       .substring(0, 500); // Limit bundle name length
 
+    // Use the first platform code for legacy fields (backward compatibility)
+    const primaryCode = platformCodes.length > 0 ? platformCodes[0] : null;
+
     // Insert bundle
     const { data: bundle, error: bundleError } = await supabase
       .from('prediction_bundles')
@@ -226,8 +235,8 @@ export default function Admin() {
         total_odds: totalOdds,
         prediction_type: predictionType,
         created_by: user.id,
-        booking_code: bookingCode.trim() || null,
-        betting_platform: bettingPlatform,
+        booking_code: primaryCode?.bookingCode || null,
+        betting_platform: primaryCode?.platform || 'football.com',
       })
       .select()
       .single();
@@ -236,6 +245,24 @@ export default function Admin() {
       console.error("Bundle creation error:", bundleError);
       toast.error("Failed to create prediction bundle");
       return;
+    }
+
+    // Insert multi-platform booking codes
+    if (platformCodes.length > 0) {
+      const bookingCodeInserts = platformCodes.map(code => ({
+        bundle_id: bundle.id,
+        platform: code.platform,
+        booking_code: code.bookingCode,
+      }));
+
+      const { error: codesError } = await supabase
+        .from('prediction_booking_codes')
+        .insert(bookingCodeInserts);
+
+      if (codesError) {
+        console.error("Booking codes insertion error:", codesError);
+        // Don't fail the whole operation, just log
+      }
     }
 
     // Insert all predictions with validated data
@@ -355,14 +382,12 @@ export default function Admin() {
                   {/* Bundle Header */}
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4 pb-4 border-b border-border">
                     <div className="flex-1 min-w-0">
-                      {bundle.booking_code && (
-                        <div className="mb-2 text-xs sm:text-sm">
-                          <span className="text-muted-foreground">Code: </span>
-                          <span className="font-mono font-bold text-primary">{bundle.booking_code}</span>
-                          <span className="text-muted-foreground ml-2">on</span>
-                          <span className="font-semibold text-foreground ml-1">{bundle.betting_platform || 'football.com'}</span>
-                        </div>
-                      )}
+                      {/* Multi-Platform Booking Codes Display */}
+                      <BookingCodesDisplay
+                        codes={bundle.prediction_booking_codes || []}
+                        legacyCode={bundle.booking_code}
+                        legacyPlatform={bundle.betting_platform}
+                      />
                       <div className="font-bold text-foreground text-base sm:text-xl mb-2">
                         Package #{bundle.id.slice(0, 8)}
                       </div>

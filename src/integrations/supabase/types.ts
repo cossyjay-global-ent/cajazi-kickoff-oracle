@@ -163,6 +163,38 @@ export type Database = {
         }
         Relationships: []
       }
+      prediction_booking_codes: {
+        Row: {
+          booking_code: string
+          bundle_id: string
+          created_at: string
+          id: string
+          platform: string
+        }
+        Insert: {
+          booking_code: string
+          bundle_id: string
+          created_at?: string
+          id?: string
+          platform: string
+        }
+        Update: {
+          booking_code?: string
+          bundle_id?: string
+          created_at?: string
+          id?: string
+          platform?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prediction_booking_codes_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "prediction_bundles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prediction_bundles: {
         Row: {
           betting_platform: string | null

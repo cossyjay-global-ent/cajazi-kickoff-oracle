@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { z } from "zod";
+import { MultiPlatformBookingCodes, PlatformBookingCode } from "@/components/MultiPlatformBookingCodes";
 
 // Validation schema for individual predictions
 const predictionFormSchema = z.object({
@@ -27,8 +28,6 @@ const predictionFormSchema = z.object({
   }, "Confidence must be between 0 and 100"),
 });
 
-const bookingCodeSchema = z.string().max(100, "Booking code too long").optional();
-
 export interface PredictionFormData {
   id: string;
   teamA: string;
@@ -38,18 +37,25 @@ export interface PredictionFormData {
   confidence: string;
   matchDate: Date;
   sportCategory: string;
-  bookingCode?: string;
+}
+
+export interface PlatformCodeData {
+  platform: string;
+  bookingCode: string;
 }
 
 interface PredictionBuilderProps {
-  onSubmit: (predictions: PredictionFormData[], predictionType: string, bookingCode: string, bettingPlatform: string) => Promise<void>;
+  onSubmit: (
+    predictions: PredictionFormData[], 
+    predictionType: string, 
+    platformCodes: PlatformCodeData[]
+  ) => Promise<void>;
 }
 
 export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
   const [predictions, setPredictions] = useState<PredictionFormData[]>([]);
   const [predictionType, setPredictionType] = useState("free");
-  const [bookingCode, setBookingCode] = useState("");
-  const [bettingPlatform, setBettingPlatform] = useState("football.com");
+  const [platformCodes, setPlatformCodes] = useState<PlatformBookingCode[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Current form state
@@ -117,23 +123,16 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
       toast.error("Add at least one prediction");
       return;
     }
-
-    // Validate booking code
-    try {
-      bookingCodeSchema.parse(bookingCode);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
-        return;
-      }
-    }
     
     setIsSubmitting(true);
     try {
-      await onSubmit(predictions, predictionType, bookingCode.trim(), bettingPlatform);
+      const codesData = platformCodes.map(c => ({
+        platform: c.platform,
+        bookingCode: c.bookingCode,
+      }));
+      await onSubmit(predictions, predictionType, codesData);
       setPredictions([]);
-      setBookingCode("");
-      setBettingPlatform("football.com");
+      setPlatformCodes([]);
     } finally {
       setIsSubmitting(false);
     }
@@ -289,35 +288,12 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
           </div>
         ) : (
           <>
-            {/* Booking Code and Platform - At the Top */}
-            <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-border">
-              <div className="space-y-1.5">
-                <Label htmlFor="bookingCode" className="text-xs sm:text-sm">Booking Code</Label>
-                <Input
-                  id="bookingCode"
-                  value={bookingCode}
-                  onChange={(e) => setBookingCode(e.target.value)}
-                  placeholder="Enter booking code"
-                  maxLength={100}
-                  className="text-sm"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="platform" className="text-xs sm:text-sm">Platform</Label>
-                <Select value={bettingPlatform} onValueChange={setBettingPlatform}>
-                  <SelectTrigger className="bg-background text-sm h-9 sm:h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-50">
-                    <SelectItem value="football.com">Football.com</SelectItem>
-                    <SelectItem value="sportybet">Sporty Bet</SelectItem>
-                    <SelectItem value="betano">Betano</SelectItem>
-                    <SelectItem value="bet9ja">Bet9ja</SelectItem>
-                    <SelectItem value="betgr8">Betgr8</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Multi-Platform Booking Codes - At the Top */}
+            <div className="mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-border">
+              <MultiPlatformBookingCodes
+                codes={platformCodes}
+                onChange={setPlatformCodes}
+              />
             </div>
 
             <div className="space-y-2 mb-3 sm:mb-4 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
