@@ -78,16 +78,52 @@ export type Database = {
           email: string
           id: string
           subscribed_at: string
+          unsubscribed_at: string | null
+          verified: boolean
         }
         Insert: {
           email: string
           id?: string
           subscribed_at?: string
+          unsubscribed_at?: string | null
+          verified?: boolean
         }
         Update: {
           email?: string
           id?: string
           subscribed_at?: string
+          unsubscribed_at?: string | null
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      newsletters: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          recipient_count: number
+          sent_at: string
+          sent_by_admin_id: string
+          subject: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          recipient_count?: number
+          sent_at?: string
+          sent_by_admin_id: string
+          subject: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          recipient_count?: number
+          sent_at?: string
+          sent_by_admin_id?: string
+          subject?: string
         }
         Relationships: []
       }
