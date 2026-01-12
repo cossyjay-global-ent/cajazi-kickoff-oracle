@@ -11,7 +11,8 @@ import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
-
+import AdminNewsletter from "./pages/AdminNewsletter";
+import Unsubscribe from "./pages/Unsubscribe";
 import Predictions from "./pages/Predictions";
 import Statistics from "./pages/Statistics";
 import VIP from "./pages/VIP";
@@ -52,6 +53,8 @@ const AppContent = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/newsletter" element={<AdminNewsletter />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<Privacy />} />
