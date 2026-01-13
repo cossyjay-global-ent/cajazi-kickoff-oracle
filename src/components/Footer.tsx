@@ -1,5 +1,5 @@
 import { Trophy, Send } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -18,13 +18,19 @@ const commentSchema = z.object({
 
 const emailSchema = z.string().trim().email("Invalid email address").max(255);
 
-export const Footer = () => {
+// Memoized link component to prevent re-renders
+const FooterLink = memo(({ to, children }: { to: string; children: React.ReactNode }) => (
+  <Link to={to} className="hover:text-primary transition-colors">{children}</Link>
+));
+FooterLink.displayName = "FooterLink";
+
+export const Footer = memo(() => {
   const { toast } = useToast();
   const [commentForm, setCommentForm] = useState({ name: "", email: "", message: "" });
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleCommentSubmit = async (e: React.FormEvent) => {
+  const handleCommentSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -63,9 +69,9 @@ export const Footer = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [commentForm, toast]);
 
-  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+  const handleNewsletterSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -110,7 +116,15 @@ export const Footer = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [newsletterEmail, toast]);
+
+  const handleCommentChange = useCallback((field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setCommentForm(prev => ({ ...prev, [field]: e.target.value }));
+  }, []);
+
+  const handleNewsletterChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewsletterEmail(e.target.value);
+  }, []);
 
   return (
     <footer className="bg-card border-t border-border mt-auto">
@@ -132,7 +146,7 @@ export const Footer = () => {
                 <Input
                   placeholder="Your Name"
                   value={commentForm.name}
-                  onChange={(e) => setCommentForm({ ...commentForm, name: e.target.value })}
+                  onChange={handleCommentChange('name')}
                   required
                   maxLength={100}
                   className="text-sm"
@@ -141,7 +155,7 @@ export const Footer = () => {
                   type="email"
                   placeholder="Your Email"
                   value={commentForm.email}
-                  onChange={(e) => setCommentForm({ ...commentForm, email: e.target.value })}
+                  onChange={handleCommentChange('email')}
                   required
                   maxLength={255}
                   className="text-sm"
@@ -149,7 +163,7 @@ export const Footer = () => {
                 <Textarea
                   placeholder="Your Message"
                   value={commentForm.message}
-                  onChange={(e) => setCommentForm({ ...commentForm, message: e.target.value })}
+                  onChange={handleCommentChange('message')}
                   required
                   maxLength={1000}
                   className="min-h-[80px] sm:min-h-[100px] text-sm"
@@ -174,7 +188,7 @@ export const Footer = () => {
                   type="email"
                   placeholder="Enter your email"
                   value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  onChange={handleNewsletterChange}
                   required
                   maxLength={255}
                   className="text-sm"
@@ -195,11 +209,11 @@ export const Footer = () => {
           </div>
           
           <div className="flex flex-wrap justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
-            <Link to="/about" className="hover:text-primary transition-colors">About</Link>
-            <Link to="/contact" className="hover:text-primary transition-colors">Contact</Link>
-            <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
-            <Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
-            <Link to="/responsible-gaming" className="hover:text-primary transition-colors">Responsible Gaming</Link>
+            <FooterLink to="/about">About</FooterLink>
+            <FooterLink to="/contact">Contact</FooterLink>
+            <FooterLink to="/privacy">Privacy Policy</FooterLink>
+            <FooterLink to="/terms">Terms of Service</FooterLink>
+            <FooterLink to="/responsible-gaming">Responsible Gaming</FooterLink>
           </div>
           
           <div className="text-xs sm:text-sm text-muted-foreground text-center">
@@ -213,4 +227,6 @@ export const Footer = () => {
       </div>
     </footer>
   );
-};
+});
+
+Footer.displayName = "Footer";

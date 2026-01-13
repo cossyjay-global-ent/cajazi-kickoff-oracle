@@ -1,26 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { X, Download, Share, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 
-export const InstallPrompt = () => {
-  const { isInstallable, isInstalled, promptInstall, showIOSInstructions, isIOS } = usePWAInstall();
+export const InstallPrompt = memo(() => {
+  const { isInstallable, isInstalled, promptInstall, showIOSInstructions } = usePWAInstall();
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
-    // Check if user previously dismissed the prompt
     const dismissed = localStorage.getItem('pwa-install-dismissed');
     if (dismissed) {
       const dismissedTime = parseInt(dismissed, 10);
-      // Show again after 7 days
       if (Date.now() - dismissedTime < 7 * 24 * 60 * 60 * 1000) {
         setIsDismissed(true);
         return;
       }
     }
 
-    // Show prompt after a short delay
     const timer = setTimeout(() => {
       if ((isInstallable || showIOSInstructions) && !isInstalled) {
         setIsVisible(true);
@@ -30,25 +27,21 @@ export const InstallPrompt = () => {
     return () => clearTimeout(timer);
   }, [isInstallable, isInstalled, showIOSInstructions]);
 
-  const handleInstall = async () => {
+  const handleInstall = useCallback(async () => {
     const success = await promptInstall();
-    if (success) {
-      setIsVisible(false);
-    }
-  };
+    if (success) setIsVisible(false);
+  }, [promptInstall]);
 
-  const handleDismiss = () => {
+  const handleDismiss = useCallback(() => {
     setIsVisible(false);
     setIsDismissed(true);
     localStorage.setItem('pwa-install-dismissed', Date.now().toString());
-  };
+  }, []);
 
-  if (!isVisible || isDismissed || isInstalled) {
-    return null;
-  }
+  if (!isVisible || isDismissed || isInstalled) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300 md:left-auto md:right-4 md:max-w-sm">
+    <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300 md:left-auto md:right-4 md:max-w-sm will-change-transform">
       <div className="bg-card border border-border rounded-xl p-4 shadow-lg">
         <button
           onClick={handleDismiss}
@@ -64,9 +57,7 @@ export const InstallPrompt = () => {
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground text-sm">
-              Install Cajazi App
-            </h3>
+            <h3 className="font-semibold text-foreground text-sm">Install Cajazi App</h3>
             
             {showIOSInstructions ? (
               <div className="mt-2 text-xs text-muted-foreground">
@@ -91,11 +82,7 @@ export const InstallPrompt = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   Get quick access to predictions from your home screen
                 </p>
-                <Button
-                  onClick={handleInstall}
-                  size="sm"
-                  className="mt-3 w-full"
-                >
+                <Button onClick={handleInstall} size="sm" className="mt-3 w-full">
                   <Download className="h-4 w-4 mr-2" />
                   Install App
                 </Button>
@@ -106,4 +93,6 @@ export const InstallPrompt = () => {
       </div>
     </div>
   );
-};
+});
+
+InstallPrompt.displayName = "InstallPrompt";

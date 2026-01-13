@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Notification {
@@ -18,20 +18,13 @@ export const useNotifications = (userId: string | null) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (userId) {
-      fetchNotifications();
-      subscribeToNotifications();
-    }
-  }, [userId]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!userId) return;
     
     setLoading(true);
     const { data, error } = await supabase
       .from('notifications')
-      .select('*')
+      .select('id, user_id, type, title, message, related_user_id, related_prediction_id, read, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(50);
@@ -41,9 +34,13 @@ export const useNotifications = (userId: string | null) => {
       setUnreadCount(data.filter(n => !n.read).length);
     }
     setLoading(false);
-  };
+  }, [userId]);
 
-  const subscribeToNotifications = () => {
+  useEffect(() => {
+    if (!userId) return;
+    
+    fetchNotifications();
+    
     const channel = supabase
       .channel('notifications-changes')
       .on(
@@ -65,9 +62,9 @@ export const useNotifications = (userId: string | null) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  };
+  }, [userId, fetchNotifications]);
 
-  const markAsRead = async (notificationId: string) => {
+  const markAsRead = useCallback(async (notificationId: string) => {
     const { error } = await supabase
       .from('notifications')
       .update({ read: true })
@@ -79,9 +76,9 @@ export const useNotifications = (userId: string | null) => {
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
     }
-  };
+  }, []);
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = useCallback(async () => {
     if (!userId) return;
 
     const { error } = await supabase
@@ -94,24 +91,26 @@ export const useNotifications = (userId: string | null) => {
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
     }
-  };
+  }, [userId]);
 
-  const deleteNotification = async (notificationId: string) => {
+  const deleteNotification = useCallback(async (notificationId: string) => {
     const { error } = await supabase
       .from('notifications')
       .delete()
       .eq('id', notificationId);
 
     if (!error) {
-      const notification = notifications.find(n => n.id === notificationId);
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      if (notification && !notification.read) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
+      setNotifications(prev => {
+        const notification = prev.find(n => n.id === notificationId);
+        if (notification && !notification.read) {
+          setUnreadCount(c => Math.max(0, c - 1));
+        }
+        return prev.filter(n => n.id !== notificationId);
+      });
     }
-  };
+  }, []);
 
-  return {
+  return useMemo(() => ({
     notifications,
     unreadCount,
     loading,
@@ -119,5 +118,5 @@ export const useNotifications = (userId: string | null) => {
     markAllAsRead,
     deleteNotification,
     refetch: fetchNotifications,
-  };
+  }), [notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, fetchNotifications]);
 };

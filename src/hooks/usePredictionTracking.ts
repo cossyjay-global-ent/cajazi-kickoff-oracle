@@ -1,12 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const usePredictionTracking = (predictionId: string | null, bundleId: string | null) => {
   useEffect(() => {
+    let mounted = true;
+    
     const trackView = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session?.user || (!predictionId && !bundleId)) return;
+      if (!mounted || !session?.user || (!predictionId && !bundleId)) return;
 
       await supabase
         .from('user_prediction_views')
@@ -18,12 +20,36 @@ export const usePredictionTracking = (predictionId: string | null, bundleId: str
     };
 
     trackView();
+    
+    return () => { mounted = false; };
   }, [predictionId, bundleId]);
 };
 
+// Cache session to avoid repeated calls
+let cachedSession: { user: { id: string } } | null = null;
+let sessionPromise: Promise<any> | null = null;
+
+const getSession = async () => {
+  if (cachedSession) return cachedSession;
+  if (sessionPromise) return sessionPromise;
+  
+  sessionPromise = supabase.auth.getSession().then(({ data: { session } }) => {
+    cachedSession = session;
+    sessionPromise = null;
+    return session;
+  });
+  
+  return sessionPromise;
+};
+
+// Listen for auth changes to invalidate cache
+supabase.auth.onAuthStateChange(() => {
+  cachedSession = null;
+});
+
 export const useFavoriteToggle = () => {
-  const toggleFavorite = async (predictionId: string | null, bundleId: string | null) => {
-    const { data: { session } } = await supabase.auth.getSession();
+  const toggleFavorite = useCallback(async (predictionId: string | null, bundleId: string | null) => {
+    const session = await getSession();
     
     if (!session?.user) return false;
 
@@ -54,10 +80,10 @@ export const useFavoriteToggle = () => {
         });
       return true;
     }
-  };
+  }, []);
 
-  const checkIsFavorite = async (predictionId: string | null, bundleId: string | null) => {
-    const { data: { session } } = await supabase.auth.getSession();
+  const checkIsFavorite = useCallback(async (predictionId: string | null, bundleId: string | null) => {
+    const session = await getSession();
     
     if (!session?.user) return false;
 
@@ -70,7 +96,7 @@ export const useFavoriteToggle = () => {
       .maybeSingle();
 
     return !!data;
-  };
+  }, []);
 
-  return { toggleFavorite, checkIsFavorite };
+  return useMemo(() => ({ toggleFavorite, checkIsFavorite }), [toggleFavorite, checkIsFavorite]);
 };

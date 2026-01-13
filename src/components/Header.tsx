@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Trophy, Menu, Users, Shield, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { User } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
@@ -13,7 +13,27 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-export const Header = () => {
+// Memoized navigation link component
+const NavLink = memo(({ to, isActive, children, onClick, className }: {
+  to: string;
+  isActive: boolean;
+  children: React.ReactNode;
+  onClick?: () => void;
+  className?: string;
+}) => (
+  <Link to={to} onClick={onClick}>
+    <Button 
+      variant={isActive ? "default" : "ghost"} 
+      size="sm"
+      className={className}
+    >
+      {children}
+    </Button>
+  </Link>
+));
+NavLink.displayName = "NavLink";
+
+export const Header = memo(() => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -42,7 +62,7 @@ export const Header = () => {
     }
   }, [user]);
 
-  const checkAdminStatus = async () => {
+  const checkAdminStatus = useCallback(async () => {
     if (!user) return;
     
     const { data } = await supabase
@@ -53,19 +73,17 @@ export const Header = () => {
       .maybeSingle();
     
     setIsAdmin(!!data);
-  };
+  }, [user]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     if (loggingOut) return;
     
     setLoggingOut(true);
     try {
-      // Clear local state immediately
       setUser(null);
       setIsAdmin(false);
       setMobileMenuOpen(false);
       
-      // Sign out from Supabase
       const { error } = await supabase.auth.signOut({ scope: 'local' });
       
       if (error) {
@@ -82,7 +100,6 @@ export const Header = () => {
         description: "You have been logged out.",
       });
       
-      // Navigate to auth page
       navigate("/auth");
     } catch (error) {
       console.error('Logout failed:', error);
@@ -94,9 +111,11 @@ export const Header = () => {
     } finally {
       setLoggingOut(false);
     }
-  };
+  }, [loggingOut, navigate, toast]);
 
-  const isActive = (path: string) => location.pathname === path;
+  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
+  
+  const isActive = useCallback((path: string) => location.pathname === path, [location.pathname]);
 
   return (
     <header className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
@@ -111,54 +130,22 @@ export const Header = () => {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            <Link to="/">
-              <Button variant={isActive("/") ? "default" : "ghost"} size="sm">
-                Home
-              </Button>
-            </Link>
-            <Link to="/predictions">
-              <Button variant={isActive("/predictions") ? "default" : "ghost"} size="sm">
-                Predictions
-              </Button>
-            </Link>
-            <Link to="/statistics">
-              <Button variant={isActive("/statistics") ? "default" : "ghost"} size="sm">
-                Statistics
-              </Button>
-            </Link>
-            <Link to="/history">
-              <Button variant={isActive("/history") ? "default" : "ghost"} size="sm">
-                History
-              </Button>
-            </Link>
-            <Link to="/vip">
-              <Button variant={isActive("/vip") ? "default" : "ghost"} size="sm">
-                VIP Predictions
-              </Button>
-            </Link>
-            <Link to="/profile">
-              <Button variant={isActive("/profile") ? "default" : "ghost"} size="sm">
-                Profile
-              </Button>
-            </Link>
-            <Link to="/settings">
-              <Button variant={isActive("/settings") ? "default" : "ghost"} size="sm">
-                <Settings className="h-4 w-4 mr-1" />
-                Settings
-              </Button>
-            </Link>
-            <Link to="/leaderboard">
-              <Button variant={isActive("/leaderboard") ? "default" : "ghost"} size="sm">
-                Leaderboard
-              </Button>
-            </Link>
+            <NavLink to="/" isActive={isActive("/")}>Home</NavLink>
+            <NavLink to="/predictions" isActive={isActive("/predictions")}>Predictions</NavLink>
+            <NavLink to="/statistics" isActive={isActive("/statistics")}>Statistics</NavLink>
+            <NavLink to="/history" isActive={isActive("/history")}>History</NavLink>
+            <NavLink to="/vip" isActive={isActive("/vip")}>VIP Predictions</NavLink>
+            <NavLink to="/profile" isActive={isActive("/profile")}>Profile</NavLink>
+            <NavLink to="/settings" isActive={isActive("/settings")}>
+              <Settings className="h-4 w-4 mr-1" />
+              Settings
+            </NavLink>
+            <NavLink to="/leaderboard" isActive={isActive("/leaderboard")}>Leaderboard</NavLink>
             {user && (
-              <Link to="/following">
-                <Button variant={isActive("/following") ? "default" : "ghost"} size="sm">
-                  <Users className="h-4 w-4 mr-1" />
-                  Following
-                </Button>
-              </Link>
+              <NavLink to="/following" isActive={isActive("/following")}>
+                <Users className="h-4 w-4 mr-1" />
+                Following
+              </NavLink>
             )}
           </nav>
 
@@ -209,54 +196,36 @@ export const Header = () => {
               </SheetTrigger>
               <SheetContent side="right" className="w-[280px] sm:w-[350px]">
                 <nav className="flex flex-col gap-4 mt-8">
-                  <Link to="/" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant={isActive("/") ? "default" : "ghost"} className="w-full justify-start">
-                      Home
-                    </Button>
-                  </Link>
-                  <Link to="/predictions" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant={isActive("/predictions") ? "default" : "ghost"} className="w-full justify-start">
-                      Predictions
-                    </Button>
-                  </Link>
-                  <Link to="/statistics" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant={isActive("/statistics") ? "default" : "ghost"} className="w-full justify-start">
-                      Statistics
-                    </Button>
-                  </Link>
-                  <Link to="/history" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant={isActive("/history") ? "default" : "ghost"} className="w-full justify-start">
-                      History
-                    </Button>
-                  </Link>
-                  <Link to="/vip" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant={isActive("/vip") ? "default" : "ghost"} className="w-full justify-start">
-                      VIP Predictions
-                    </Button>
-                  </Link>
-                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant={isActive("/profile") ? "default" : "ghost"} className="w-full justify-start">
-                      Profile
-                    </Button>
-                  </Link>
-                  <Link to="/settings" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant={isActive("/settings") ? "default" : "ghost"} className="w-full justify-start">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Settings
-                    </Button>
-                  </Link>
-                  <Link to="/leaderboard" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant={isActive("/leaderboard") ? "default" : "ghost"} className="w-full justify-start">
-                      Leaderboard
-                    </Button>
-                  </Link>
+                  <NavLink to="/" isActive={isActive("/")} onClick={closeMobileMenu} className="w-full justify-start">
+                    Home
+                  </NavLink>
+                  <NavLink to="/predictions" isActive={isActive("/predictions")} onClick={closeMobileMenu} className="w-full justify-start">
+                    Predictions
+                  </NavLink>
+                  <NavLink to="/statistics" isActive={isActive("/statistics")} onClick={closeMobileMenu} className="w-full justify-start">
+                    Statistics
+                  </NavLink>
+                  <NavLink to="/history" isActive={isActive("/history")} onClick={closeMobileMenu} className="w-full justify-start">
+                    History
+                  </NavLink>
+                  <NavLink to="/vip" isActive={isActive("/vip")} onClick={closeMobileMenu} className="w-full justify-start">
+                    VIP Predictions
+                  </NavLink>
+                  <NavLink to="/profile" isActive={isActive("/profile")} onClick={closeMobileMenu} className="w-full justify-start">
+                    Profile
+                  </NavLink>
+                  <NavLink to="/settings" isActive={isActive("/settings")} onClick={closeMobileMenu} className="w-full justify-start">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </NavLink>
+                  <NavLink to="/leaderboard" isActive={isActive("/leaderboard")} onClick={closeMobileMenu} className="w-full justify-start">
+                    Leaderboard
+                  </NavLink>
                   {user && (
-                    <Link to="/following" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant={isActive("/following") ? "default" : "ghost"} className="w-full justify-start">
-                        <Users className="h-4 w-4 mr-2" />
-                        Following Feed
-                      </Button>
-                    </Link>
+                    <NavLink to="/following" isActive={isActive("/following")} onClick={closeMobileMenu} className="w-full justify-start">
+                      <Users className="h-4 w-4 mr-2" />
+                      Following Feed
+                    </NavLink>
                   )}
                   
                   <div className="border-t pt-4 mt-4">
@@ -271,12 +240,12 @@ export const Header = () => {
                       </Button>
                     ) : (
                       <div className="flex flex-col gap-2">
-                        <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                        <Link to="/auth" onClick={closeMobileMenu}>
                           <Button variant="outline" className="w-full">
                             Login
                           </Button>
                         </Link>
-                        <Link to="/auth?mode=register" onClick={() => setMobileMenuOpen(false)}>
+                        <Link to="/auth?mode=register" onClick={closeMobileMenu}>
                           <Button className="w-full">
                             Register
                           </Button>
@@ -292,4 +261,6 @@ export const Header = () => {
       </div>
     </header>
   );
-};
+});
+
+Header.displayName = "Header";

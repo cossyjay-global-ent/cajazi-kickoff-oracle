@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { Button } from "./ui/button";
 import { Star } from "lucide-react";
 import { useFavoriteToggle } from "@/hooks/usePredictionTracking";
@@ -12,25 +12,35 @@ interface PredictionCardProps {
   bundleId?: string | null;
 }
 
-export const PredictionCard = ({ match, prediction, odds, confidence, predictionId, bundleId }: PredictionCardProps) => {
+export const PredictionCard = memo(({ 
+  match, 
+  prediction, 
+  odds, 
+  confidence, 
+  predictionId, 
+  bundleId 
+}: PredictionCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const { toggleFavorite, checkIsFavorite } = useFavoriteToggle();
 
   useEffect(() => {
+    let mounted = true;
     const checkFavorite = async () => {
       if (predictionId || bundleId) {
         const favorite = await checkIsFavorite(predictionId || null, bundleId || null);
-        setIsFavorite(favorite);
+        if (mounted) setIsFavorite(favorite);
       }
     };
     checkFavorite();
-  }, [predictionId, bundleId]);
+    return () => { mounted = false; };
+  }, [predictionId, bundleId, checkIsFavorite]);
 
-  const handleFavoriteClick = async (e: React.MouseEvent) => {
+  const handleFavoriteClick = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     const newState = await toggleFavorite(predictionId || null, bundleId || null);
     setIsFavorite(newState);
-  };
+  }, [predictionId, bundleId, toggleFavorite]);
+
   return (
     <div className="bg-card border border-border rounded-lg p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0 mb-3 sm:mb-4">
@@ -66,11 +76,13 @@ export const PredictionCard = ({ match, prediction, odds, confidence, prediction
         </div>
         <div className="w-full bg-secondary rounded-full h-1.5 sm:h-2 overflow-hidden">
           <div 
-            className="bg-primary h-full rounded-full transition-all duration-300"
+            className="bg-primary h-full rounded-full transition-all duration-300 will-change-transform"
             style={{ width: `${confidence}%` }}
           />
         </div>
       </div>
     </div>
   );
-};
+});
+
+PredictionCard.displayName = "PredictionCard";
