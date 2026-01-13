@@ -51,7 +51,7 @@ const Contact = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
               <a 
-                href="https://wa.me/447350005190" 
+                href={`https://wa.me/447350005190?text=${encodeURIComponent("Hello KickoffPrediction, I want VIP predictions and support.")}`}
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-primary hover:underline"

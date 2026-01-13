@@ -8,6 +8,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
+import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -70,6 +71,7 @@ const AppContent = () => {
       </main>
       <Footer />
       <InstallPrompt />
+      <FloatingWhatsApp />
     </div>
   );
 };
