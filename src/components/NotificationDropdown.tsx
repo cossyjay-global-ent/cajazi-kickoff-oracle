@@ -11,26 +11,34 @@ import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { memo, useCallback, useMemo } from "react";
 
 interface NotificationDropdownProps {
   userId: string | null;
 }
 
-export const NotificationDropdown = ({ userId }: NotificationDropdownProps) => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications(userId);
+const NotificationIcon = memo(({ type }: { type: string }) => {
+  switch (type) {
+    case 'new_follower':
+      return <UserPlus className="h-4 w-4 text-primary" />;
+    case 'new_prediction':
+      return <Trophy className="h-4 w-4 text-chart-2" />;
+    default:
+      return <Bell className="h-4 w-4 text-muted-foreground" />;
+  }
+});
+NotificationIcon.displayName = "NotificationIcon";
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'new_follower':
-        return <UserPlus className="h-4 w-4 text-primary" />;
-      case 'new_prediction':
-        return <Trophy className="h-4 w-4 text-chart-2" />;
-      default:
-        return <Bell className="h-4 w-4 text-muted-foreground" />;
-    }
-  };
-
-  const getNotificationLink = (notification: Notification) => {
+const NotificationItem = memo(({ 
+  notification, 
+  onMarkRead, 
+  onDelete 
+}: { 
+  notification: Notification;
+  onMarkRead: (id: string) => void;
+  onDelete: (id: string) => void;
+}) => {
+  const link = useMemo(() => {
     if (notification.type === 'new_follower' && notification.related_user_id) {
       return `/user/${notification.related_user_id}`;
     }
@@ -38,7 +46,77 @@ export const NotificationDropdown = ({ userId }: NotificationDropdownProps) => {
       return '/following';
     }
     return null;
-  };
+  }, [notification.type, notification.related_user_id]);
+
+  const handleMarkRead = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onMarkRead(notification.id);
+  }, [notification.id, onMarkRead]);
+
+  const handleDelete = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onDelete(notification.id);
+  }, [notification.id, onDelete]);
+
+  const content = (
+    <div className="flex items-start gap-3 w-full">
+      <div className="mt-0.5"><NotificationIcon type={notification.type} /></div>
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm ${!notification.read ? 'font-medium' : ''}`}>
+          {notification.message}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+        </p>
+      </div>
+      <div className="flex gap-1">
+        {!notification.read && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={handleMarkRead}
+          >
+            <Check className="h-3 w-3" />
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+          onClick={handleDelete}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <DropdownMenuItem
+      className={`p-3 cursor-pointer ${!notification.read ? 'bg-muted/50' : ''}`}
+      onClick={() => !notification.read && onMarkRead(notification.id)}
+    >
+      {link ? (
+        <Link to={link} className="w-full">
+          {content}
+        </Link>
+      ) : (
+        content
+      )}
+    </DropdownMenuItem>
+  );
+});
+NotificationItem.displayName = "NotificationItem";
+
+export const NotificationDropdown = memo(({ userId }: NotificationDropdownProps) => {
+  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications(userId);
+
+  const handleMarkAllRead = useCallback(() => {
+    markAllAsRead();
+  }, [markAllAsRead]);
 
   if (!userId) return null;
 
@@ -61,7 +139,7 @@ export const NotificationDropdown = ({ userId }: NotificationDropdownProps) => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => markAllAsRead()}
+              onClick={handleMarkAllRead}
               className="text-xs h-7"
             >
               <Check className="h-3 w-3 mr-1" />
@@ -75,66 +153,14 @@ export const NotificationDropdown = ({ userId }: NotificationDropdownProps) => {
               No notifications yet
             </div>
           ) : (
-            notifications.map((notification) => {
-              const link = getNotificationLink(notification);
-              const content = (
-                <div className="flex items-start gap-3 w-full">
-                  <div className="mt-0.5">{getNotificationIcon(notification.type)}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm ${!notification.read ? 'font-medium' : ''}`}>
-                      {notification.message}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                    </p>
-                  </div>
-                  <div className="flex gap-1">
-                    {!notification.read && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          markAsRead(notification.id);
-                        }}
-                      >
-                        <Check className="h-3 w-3" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        deleteNotification(notification.id);
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              );
-
-              return (
-                <DropdownMenuItem
-                  key={notification.id}
-                  className={`p-3 cursor-pointer ${!notification.read ? 'bg-muted/50' : ''}`}
-                  onClick={() => !notification.read && markAsRead(notification.id)}
-                >
-                  {link ? (
-                    <Link to={link} className="w-full">
-                      {content}
-                    </Link>
-                  ) : (
-                    content
-                  )}
-                </DropdownMenuItem>
-              );
-            })
+            notifications.map((notification) => (
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+                onMarkRead={markAsRead}
+                onDelete={deleteNotification}
+              />
+            ))
           )}
         </ScrollArea>
         {notifications.length > 0 && (
@@ -152,4 +178,6 @@ export const NotificationDropdown = ({ userId }: NotificationDropdownProps) => {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-};
+});
+
+NotificationDropdown.displayName = "NotificationDropdown";

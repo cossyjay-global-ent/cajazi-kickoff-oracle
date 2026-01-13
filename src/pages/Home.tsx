@@ -1,19 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PredictionCard } from "@/components/PredictionCard";
 import { FullPageState } from "@/components/FullPageState";
 import { Star, Crown } from "lucide-react";
 
+interface Prediction {
+  id: string;
+  match_name: string;
+  prediction_text: string;
+  odds: number;
+  confidence: number;
+}
+
 export default function Home() {
   const [user, setUser] = useState<any>(null);
-  const [predictions, setPredictions] = useState<any[]>([]);
-  const [vipPredictions, setVipPredictions] = useState<any[]>([]);
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [vipPredictions, setVipPredictions] = useState<Prediction[]>([]);
   const [hasSubscription, setHasSubscription] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
+    let mounted = true;
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
       setUser(session?.user ?? null);
       if (!session) {
         navigate("/auth");
@@ -21,52 +33,85 @@ export default function Home() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
       setUser(session?.user ?? null);
       if (!session) {
         navigate("/auth");
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
-  useEffect(() => {
-    if (user) {
-      fetchFeaturedPredictions();
-      fetchVipPredictions();
+  const fetchPredictions = useCallback(async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    
+    // Fetch both in parallel for better performance
+    const [freeResult, vipResult] = await Promise.all([
+      supabase
+        .from('predictions')
+        .select('id, match_name, prediction_text, odds, confidence')
+        .eq('prediction_type', 'free')
+        .order('created_at', { ascending: false })
+        .limit(2),
+      supabase
+        .from('predictions')
+        .select('id, match_name, prediction_text, odds, confidence')
+        .eq('prediction_type', 'vip')
+        .order('created_at', { ascending: false })
+        .limit(3)
+    ]);
+
+    if (freeResult.data) {
+      setPredictions(freeResult.data);
     }
-  }, [user]);
 
-  const fetchFeaturedPredictions = async () => {
-    const { data } = await supabase
-      .from('predictions')
-      .select('*')
-      .eq('prediction_type', 'free')
-      .order('created_at', { ascending: false })
-      .limit(2);
-
-    if (data) {
-      setPredictions(data);
-    }
-  };
-
-  const fetchVipPredictions = async () => {
-    // RLS enforces VIP access at database level - just fetch directly
-    const { data } = await supabase
-      .from('predictions')
-      .select('*')
-      .eq('prediction_type', 'vip')
-      .order('created_at', { ascending: false })
-      .limit(3);
-
-    if (data && data.length > 0) {
-      setVipPredictions(data);
+    if (vipResult.data && vipResult.data.length > 0) {
+      setVipPredictions(vipResult.data);
       setHasSubscription(true);
     } else {
       setVipPredictions([]);
       setHasSubscription(false);
     }
-  };
+    
+    setIsLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchPredictions();
+    }
+  }, [user, fetchPredictions]);
+
+  // Memoize rendered prediction cards
+  const freePredictionCards = useMemo(() => (
+    predictions.map((pred) => (
+      <PredictionCard
+        key={pred.id}
+        match={pred.match_name}
+        prediction={pred.prediction_text}
+        odds={pred.odds}
+        confidence={pred.confidence}
+      />
+    ))
+  ), [predictions]);
+
+  const vipPredictionCards = useMemo(() => (
+    vipPredictions.map((pred) => (
+      <PredictionCard
+        key={pred.id}
+        match={pred.match_name}
+        prediction={pred.prediction_text}
+        odds={pred.odds}
+        confidence={pred.confidence}
+      />
+    ))
+  ), [vipPredictions]);
 
   if (!user) {
     return (
@@ -99,15 +144,7 @@ export default function Home() {
               <h3 className="text-xl sm:text-2xl font-bold text-foreground">Your VIP Predictions</h3>
             </div>
             <div className="space-y-3 sm:space-y-4">
-              {vipPredictions.map((pred) => (
-                <PredictionCard
-                  key={pred.id}
-                  match={pred.match_name}
-                  prediction={pred.prediction_text}
-                  odds={parseFloat(pred.odds)}
-                  confidence={pred.confidence}
-                />
-              ))}
+              {vipPredictionCards}
             </div>
           </div>
         )}
@@ -118,16 +155,14 @@ export default function Home() {
             <h3 className="text-xl sm:text-2xl font-bold text-foreground">Today's Featured Predictions</h3>
           </div>
           <div className="space-y-3 sm:space-y-4">
-            {predictions.length > 0 ? (
-              predictions.map((pred) => (
-                <PredictionCard
-                  key={pred.id}
-                  match={pred.match_name}
-                  prediction={pred.prediction_text}
-                  odds={parseFloat(pred.odds)}
-                  confidence={pred.confidence}
-                />
-              ))
+            {isLoading ? (
+              <div className="text-center py-8 sm:py-12 bg-card/50 border border-border rounded-xl">
+                <p className="text-muted-foreground text-sm sm:text-base">
+                  Loading predictions...
+                </p>
+              </div>
+            ) : predictions.length > 0 ? (
+              freePredictionCards
             ) : (
               <div className="text-center py-8 sm:py-12 bg-card/50 border border-border rounded-xl">
                 <p className="text-muted-foreground text-sm sm:text-base">
