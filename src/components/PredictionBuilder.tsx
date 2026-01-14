@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,19 +44,43 @@ export interface PlatformCodeData {
   bookingCode: string;
 }
 
+export interface InitialBundleData {
+  id: string;
+  prediction_type: string;
+  predictions?: Array<{
+    id: string;
+    team_a: string;
+    team_b: string;
+    prediction_text: string;
+    odds: number;
+    confidence: number;
+    match_date: string;
+    sport_category: string;
+  }>;
+  prediction_booking_codes?: Array<{
+    platform: string;
+    booking_code: string;
+  }>;
+  booking_code?: string;
+  betting_platform?: string;
+}
+
 interface PredictionBuilderProps {
   onSubmit: (
     predictions: PredictionFormData[], 
     predictionType: string, 
     platformCodes: PlatformCodeData[]
   ) => Promise<void>;
+  initialBundle?: InitialBundleData | null;
+  onClearInitialBundle?: () => void;
 }
 
-export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
+export const PredictionBuilder = ({ onSubmit, initialBundle, onClearInitialBundle }: PredictionBuilderProps) => {
   const [predictions, setPredictions] = useState<PredictionFormData[]>([]);
   const [predictionType, setPredictionType] = useState("free");
   const [platformCodes, setPlatformCodes] = useState<PlatformBookingCode[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRePredicting, setIsRePredicting] = useState(false);
   
   // Current form state
   const [teamA, setTeamA] = useState("");
@@ -66,6 +90,55 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
   const [confidence, setConfidence] = useState("");
   const [matchDate, setMatchDate] = useState<Date>(new Date());
   const [sportCategory, setSportCategory] = useState("football");
+
+  // Load initial bundle data for re-prediction
+  useEffect(() => {
+    if (initialBundle) {
+      // Convert bundle predictions to form format
+      const formPredictions: PredictionFormData[] = (initialBundle.predictions || []).map(pred => ({
+        id: Math.random().toString(36).substr(2, 9), // New ID for the clone
+        teamA: pred.team_a || "",
+        teamB: pred.team_b || "",
+        predictionText: pred.prediction_text || "",
+        odds: pred.odds?.toString() || "1.00",
+        confidence: pred.confidence?.toString() || "0",
+        matchDate: new Date(), // Use current date for new prediction
+        sportCategory: pred.sport_category || "football",
+      }));
+      
+      setPredictions(formPredictions);
+      setPredictionType(initialBundle.prediction_type || "free");
+      
+      // Load booking codes
+      const codes: PlatformBookingCode[] = [];
+      if (initialBundle.prediction_booking_codes && initialBundle.prediction_booking_codes.length > 0) {
+        initialBundle.prediction_booking_codes.forEach(code => {
+          codes.push({
+            id: Math.random().toString(36).substr(2, 9),
+            platform: code.platform,
+            bookingCode: code.booking_code,
+          });
+        });
+      } else if (initialBundle.booking_code) {
+        // Fallback to legacy fields
+        codes.push({
+          id: Math.random().toString(36).substr(2, 9),
+          platform: initialBundle.betting_platform || "football.com",
+          bookingCode: initialBundle.booking_code,
+        });
+      }
+      setPlatformCodes(codes);
+      setIsRePredicting(true);
+    }
+  }, [initialBundle]);
+
+  const handleClearRePrediction = () => {
+    setPredictions([]);
+    setPlatformCodes([]);
+    setPredictionType("free");
+    setIsRePredicting(false);
+    onClearInitialBundle?.();
+  };
 
   const totalOdds = predictions.reduce((acc, pred) => acc * parseFloat(pred.odds || "1"), 1);
 
@@ -133,6 +206,8 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
       await onSubmit(predictions, predictionType, codesData);
       setPredictions([]);
       setPlatformCodes([]);
+      setIsRePredicting(false);
+      onClearInitialBundle?.();
     } finally {
       setIsSubmitting(false);
     }
@@ -140,6 +215,24 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      {/* Re-Prediction Banner */}
+      {isRePredicting && (
+        <div className="lg:col-span-2 bg-primary/10 border border-primary/30 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-primary font-semibold text-sm sm:text-base">📋 Re-Prediction Mode</span>
+            <span className="text-muted-foreground text-xs sm:text-sm">Modify the cloned bundle and submit as new</span>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleClearRePrediction}
+            className="self-end sm:self-center text-xs"
+          >
+            Cancel Re-Prediction
+          </Button>
+        </div>
+      )}
+      
       {/* Prediction Builder Section - Left Side */}
       <div className="bg-card border border-border rounded-lg p-4 sm:p-6">
         <h3 className="text-lg sm:text-xl font-bold text-foreground mb-3 sm:mb-4">Prediction Builder</h3>
@@ -273,7 +366,9 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
       {/* Current Predictions Preview - Right Side */}
       <div className="bg-card border border-border rounded-lg p-4 sm:p-6">
         <div className="flex justify-between items-center mb-3 sm:mb-4">
-          <h3 className="text-base sm:text-xl font-bold text-foreground">Current Predictions</h3>
+          <h3 className="text-base sm:text-xl font-bold text-foreground">
+            {isRePredicting ? "Re-Prediction Preview" : "Current Predictions"}
+          </h3>
           {predictions.length > 0 && (
             <Button onClick={clearAll} variant="outline" size="sm" className="text-xs h-7 sm:h-8">
               Clear All
@@ -347,7 +442,7 @@ export const PredictionBuilder = ({ onSubmit }: PredictionBuilderProps) => {
                 size="default"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Adding..." : "Add to Predictions"}
+                {isSubmitting ? "Adding..." : isRePredicting ? "Submit as New Prediction" : "Add to Predictions"}
               </Button>
             </div>
           </>
