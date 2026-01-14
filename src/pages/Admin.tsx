@@ -10,7 +10,7 @@ import { CommentManager } from "@/components/CommentManager";
 import { EditBundleDialog } from "@/components/EditBundleDialog";
 import { z } from "zod";
 import { sendNotificationEmail, getUserEmail } from "@/hooks/useEmailNotifications";
-import { Pencil, Mail } from "lucide-react";
+import { Pencil, Mail, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BookingCodesDisplay } from "@/components/BookingCodesDisplay";
 
@@ -49,6 +49,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [editingBundle, setEditingBundle] = useState<any>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [rePredictBundle, setRePredictBundle] = useState<any>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -357,7 +358,11 @@ export default function Admin() {
         </div>
 
         <div className="mb-6">
-          <PredictionBuilder onSubmit={handleAddPredictions} />
+          <PredictionBuilder 
+            onSubmit={handleAddPredictions} 
+            initialBundle={rePredictBundle}
+            onClearInitialBundle={() => setRePredictBundle(null)}
+          />
         </div>
 
         <div className="mb-6">
@@ -400,7 +405,20 @@ export default function Admin() {
                         </span>
                       </div>
                     </div>
-                    <div className="flex gap-2 self-end sm:self-start">
+                    <div className="flex flex-wrap gap-2 self-end sm:self-start">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => {
+                          setRePredictBundle(bundle);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                          toast.success("Bundle loaded for re-prediction. Modify and submit as new.");
+                        }}
+                      >
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Re-Predict
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
