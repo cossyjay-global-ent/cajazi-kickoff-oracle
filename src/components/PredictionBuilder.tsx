@@ -73,9 +73,17 @@ interface PredictionBuilderProps {
   ) => Promise<void>;
   initialBundle?: InitialBundleData | null;
   onClearInitialBundle?: () => void;
+  selectedPrediction?: PredictionFormData | null;
+  onClearSelectedPrediction?: () => void;
 }
 
-export const PredictionBuilder = ({ onSubmit, initialBundle, onClearInitialBundle }: PredictionBuilderProps) => {
+export const PredictionBuilder = ({ 
+  onSubmit, 
+  initialBundle, 
+  onClearInitialBundle,
+  selectedPrediction,
+  onClearSelectedPrediction 
+}: PredictionBuilderProps) => {
   const [predictions, setPredictions] = useState<PredictionFormData[]>([]);
   const [predictionType, setPredictionType] = useState("free");
   const [platformCodes, setPlatformCodes] = useState<PlatformBookingCode[]>([]);
@@ -131,6 +139,21 @@ export const PredictionBuilder = ({ onSubmit, initialBundle, onClearInitialBundl
       setIsRePredicting(true);
     }
   }, [initialBundle]);
+
+  // Populate form when a prediction is selected from preview
+  useEffect(() => {
+    if (selectedPrediction) {
+      setTeamA(selectedPrediction.teamA);
+      setTeamB(selectedPrediction.teamB);
+      setPredictionText(selectedPrediction.predictionText);
+      setOdds(selectedPrediction.odds);
+      setConfidence(selectedPrediction.confidence);
+      setMatchDate(selectedPrediction.matchDate);
+      setSportCategory(selectedPrediction.sportCategory);
+      onClearSelectedPrediction?.();
+      toast.success(`Loaded: ${selectedPrediction.teamA} vs ${selectedPrediction.teamB}`);
+    }
+  }, [selectedPrediction, onClearSelectedPrediction]);
 
   const handleClearRePrediction = () => {
     setPredictions([]);
@@ -392,10 +415,30 @@ export const PredictionBuilder = ({ onSubmit, initialBundle, onClearInitialBundl
             </div>
 
             <div className="space-y-2 mb-3 sm:mb-4 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
+              {isRePredicting && (
+                <p className="text-xs text-muted-foreground mb-2">
+                  💡 Click any match to load it into the form for editing
+                </p>
+              )}
               {predictions.map((pred) => (
                 <div
                   key={pred.id}
-                  className="flex justify-between items-start p-2.5 sm:p-3 bg-background border border-border rounded-lg"
+                  className={cn(
+                    "flex justify-between items-start p-2.5 sm:p-3 bg-background border border-border rounded-lg transition-colors",
+                    isRePredicting && "cursor-pointer hover:border-primary hover:bg-primary/5"
+                  )}
+                  onClick={() => {
+                    if (isRePredicting) {
+                      setTeamA(pred.teamA);
+                      setTeamB(pred.teamB);
+                      setPredictionText(pred.predictionText);
+                      setOdds(pred.odds);
+                      setConfidence(pred.confidence);
+                      setMatchDate(pred.matchDate);
+                      setSportCategory(pred.sportCategory);
+                      toast.success(`Loaded: ${pred.teamA} vs ${pred.teamB}`);
+                    }
+                  }}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-foreground text-sm truncate">
