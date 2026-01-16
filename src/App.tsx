@@ -34,6 +34,7 @@ const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 const Following = lazy(() => import("./pages/Following"));
 const Install = lazy(() => import("./pages/Install"));
+const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Optimized QueryClient with better caching defaults
@@ -96,6 +97,7 @@ const AppContent = memo(() => {
             <Route path="/user/:userId" element={<PublicProfile />} />
             <Route path="/following" element={<Following />} />
             <Route path="/install" element={<Install />} />
+            <Route path="/super-admin" element={<SuperAdminDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
