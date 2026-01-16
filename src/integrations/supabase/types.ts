@@ -534,6 +534,7 @@ export type Database = {
       }
       ensure_profile_and_link_subscription: { Args: never; Returns: undefined }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      is_super_developer: { Args: { uid: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
