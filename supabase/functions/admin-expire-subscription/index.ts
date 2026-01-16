@@ -45,6 +45,7 @@ serve(async (req) => {
 
     const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Check for admin role
     const { data: adminRole, error: roleError } = await adminClient
       .from("user_roles")
       .select("role")
@@ -53,7 +54,11 @@ serve(async (req) => {
       .maybeSingle();
 
     if (roleError) return json(500, { error: "Failed to verify admin role" });
-    if (!adminRole) return json(403, { error: "Forbidden" });
+
+    // Check for super developer access
+    const isSuperDeveloper = user.email === "support@cosmas.dev";
+
+    if (!adminRole && !isSuperDeveloper) return json(403, { error: "Forbidden" });
 
     const body = (await req.json().catch(() => null)) as ExpireBody | null;
     const subscriptionId = body?.subscription_id;

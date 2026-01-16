@@ -56,7 +56,17 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("role", "admin")
       .maybeSingle();
 
-    if (roleError || !adminRole) {
+    if (roleError) {
+      return new Response(
+        JSON.stringify({ error: "Failed to verify admin role" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Check for super developer access
+    const isSuperDeveloper = user.email === "support@cosmas.dev";
+
+    if (!adminRole && !isSuperDeveloper) {
       return new Response(
         JSON.stringify({ error: "Forbidden: Admin access required" }),
         { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
