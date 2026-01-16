@@ -10,9 +10,10 @@ import { CommentManager } from "@/components/CommentManager";
 import { EditBundleDialog } from "@/components/EditBundleDialog";
 import { z } from "zod";
 import { sendNotificationEmail, getUserEmail } from "@/hooks/useEmailNotifications";
-import { Pencil, Mail, RefreshCw } from "lucide-react";
+import { Pencil, Mail, RefreshCw, Shield, Crown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BookingCodesDisplay } from "@/components/BookingCodesDisplay";
+import { Badge } from "@/components/ui/badge";
 
 // Validation schema for predictions
 const predictionSchema = z.object({
@@ -42,6 +43,7 @@ const bundleSchema = z.object({
 
 export default function Admin() {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperDeveloper, setIsSuperDeveloper] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [userRoles, setUserRoles] = useState<Record<string, string[]>>({});
@@ -65,6 +67,10 @@ export default function Admin() {
     }
 
     setUser(session.user);
+    
+    // Check if super developer
+    const superDevCheck = session.user.email === "support@cosmas.dev";
+    setIsSuperDeveloper(superDevCheck);
 
     const { data } = await supabase
       .from('user_roles')
@@ -73,7 +79,8 @@ export default function Admin() {
       .eq('role', 'admin')
       .maybeSingle();
 
-    if (!data) {
+    // Allow access if admin OR super developer
+    if (!data && !superDevCheck) {
       navigate("/");
       return;
     }
@@ -348,7 +355,21 @@ export default function Admin() {
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Admin Panel</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Admin Panel</h2>
+            {isSuperDeveloper && (
+              <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg">
+                <Crown className="h-3 w-3 mr-1" />
+                Super Developer
+              </Badge>
+            )}
+            {!isSuperDeveloper && isAdmin && (
+              <Badge variant="secondary" className="shadow">
+                <Shield className="h-3 w-3 mr-1" />
+                Admin
+              </Badge>
+            )}
+          </div>
           <Button asChild variant="outline">
             <Link to="/admin/newsletter">
               <Mail className="h-4 w-4 mr-2" />
