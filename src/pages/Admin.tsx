@@ -370,12 +370,22 @@ export default function Admin() {
               </Badge>
             )}
           </div>
-          <Button asChild variant="outline">
-            <Link to="/admin/newsletter">
-              <Mail className="h-4 w-4 mr-2" />
-              Newsletter Manager
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            {isSuperDeveloper && (
+              <Button asChild className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white">
+                <Link to="/super-admin">
+                  <Crown className="h-4 w-4 mr-2" />
+                  Super Dashboard
+                </Link>
+              </Button>
+            )}
+            <Button asChild variant="outline">
+              <Link to="/admin/newsletter">
+                <Mail className="h-4 w-4 mr-2" />
+                Newsletter Manager
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="mb-6">
