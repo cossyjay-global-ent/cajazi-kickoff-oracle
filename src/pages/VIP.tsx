@@ -96,7 +96,15 @@ export default function VIP() {
     if (!user) return;
 
     try {
-      // First check by user_id (pick most recent active if duplicates exist)
+      // First check if user is super developer (has lifetime VIP access)
+      const { data: hasVipAccess } = await supabase.rpc('has_vip_access', { uid: user.id });
+      
+      if (hasVipAccess) {
+        setHasSubscription(true);
+        return;
+      }
+
+      // Check by user_id (pick most recent active if duplicates exist)
       const { data: userIdData, error: userIdError } = await supabase
         .from('subscriptions')
         .select('*')
