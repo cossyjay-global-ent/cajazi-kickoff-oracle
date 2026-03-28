@@ -63,10 +63,16 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check for super developer access
-    const isSuperDeveloper = user.email === "support@cosmas.dev";
+    // Check for developer role in profiles (no auth.users dependency)
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
 
-    if (!adminRole && !isSuperDeveloper) {
+    const isDeveloper = profile?.role === "developer";
+
+    if (!adminRole && !isDeveloper) {
       return new Response(
         JSON.stringify({ error: "Forbidden: Admin access required" }),
         { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
