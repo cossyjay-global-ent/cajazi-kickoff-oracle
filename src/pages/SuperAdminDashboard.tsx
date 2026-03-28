@@ -69,7 +69,13 @@ export default function SuperAdminDashboard() {
     }
 
     // Only super developers can access this page
-    if (session.user.email !== "support@cosmas.dev") {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .maybeSingle();
+
+    if (profile?.role !== 'developer') {
       navigate("/");
       return;
     }
