@@ -15,7 +15,6 @@ function getPlanDurationDays(planType: string): number {
   if (plan.includes("6") && plan.includes("month")) return 180;
   if (plan.includes("year") || plan.includes("12") && plan.includes("month")) return 365;
   
-  // Default to 14 days (2 weeks) as per user's SQL
   return 14;
 }
 
@@ -45,7 +44,6 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json(401, { error: "Missing Authorization header" });
 
-    // Validate the caller identity (must be logged in)
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -57,10 +55,9 @@ serve(async (req) => {
 
     if (userError || !user) return json(401, { error: "Unauthorized" });
 
-    // Service-role client for atomic updates (bypasses RLS), but we enforce admin here
     const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Check for admin role
+    // Check for admin role in user_roles table
     const { data: adminRole, error: roleError } = await adminClient
       .from("user_roles")
       .select("role")
@@ -70,10 +67,16 @@ serve(async (req) => {
 
     if (roleError) return json(500, { error: "Failed to verify admin role" });
 
-    // Check for super developer access
-    const isSuperDeveloper = user.email === "support@cosmas.dev";
+    // Check for developer role in profiles table (no auth.users dependency)
+    const { data: profile } = await adminClient
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
 
-    if (!adminRole && !isSuperDeveloper) return json(403, { error: "Forbidden" });
+    const isDeveloper = profile?.role === "developer";
+
+    if (!adminRole && !isDeveloper) return json(403, { error: "Forbidden" });
 
     const body = (await req.json().catch(() => null)) as ActivateBody | null;
     const subscriptionId = body?.subscription_id;
@@ -103,18 +106,17 @@ serve(async (req) => {
     // Auto-link if a profile exists for payment_email (but do not require it)
     let linkedUserId: string | null = sub.user_id ?? null;
     if (sub.payment_email) {
-      const { data: profile } = await adminClient
+      const { data: linkedProfile } = await adminClient
         .from("profiles")
         .select("id")
         .eq("email", String(sub.payment_email).toLowerCase())
         .maybeSingle();
 
-      if (profile?.id) linkedUserId = profile.id;
+      if (linkedProfile?.id) linkedUserId = linkedProfile.id;
     }
 
     const updateData: Record<string, unknown> = {
       status: "active",
-      // started_at is NOT NULL in schema, but keep the original if present
       started_at: sub.started_at ?? now.toISOString(),
       expires_at: newExpiresAt.toISOString(),
       registration_status: linkedUserId ? "registered" : "pending",

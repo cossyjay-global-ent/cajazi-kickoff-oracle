@@ -6,7 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Keep in sync with client plan types
 const PLAN_DURATIONS_DAYS: Record<string, number> = {
   "2_weeks": 14,
   "1_month": 30,
@@ -18,7 +17,6 @@ const PLAN_DURATIONS_DAYS: Record<string, number> = {
 type CreateBody = {
   email: string;
   plan_type: string;
-  // Optional override when admin picks a custom expiry in UI
   expires_at?: string;
 };
 
@@ -67,10 +65,16 @@ serve(async (req) => {
 
     if (roleError) return json(500, { error: "Failed to verify admin role" });
 
-    // Check for super developer access
-    const isSuperDeveloper = user.email === "support@cosmas.dev";
+    // Check for developer role in profiles (no auth.users dependency)
+    const { data: profile } = await adminClient
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
 
-    if (!adminRole && !isSuperDeveloper) return json(403, { error: "Forbidden" });
+    const isDeveloper = profile?.role === "developer";
+
+    if (!adminRole && !isDeveloper) return json(403, { error: "Forbidden" });
 
     const body = (await req.json().catch(() => null)) as CreateBody | null;
     const email = body?.email?.trim().toLowerCase();

@@ -68,19 +68,27 @@ export default function Admin() {
 
     setUser(session.user);
     
-    // Check if super developer
-    const superDevCheck = session.user.email === "support@cosmas.dev";
-    setIsSuperDeveloper(superDevCheck);
+    // Fetch profile role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .maybeSingle();
 
-    const { data } = await supabase
+    const isDeveloper = profile?.role === 'developer';
+    const isAdminRole = profile?.role === 'admin';
+    setIsSuperDeveloper(isDeveloper);
+
+    // Also check user_roles table for admin role
+    const { data: roleData } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', session.user.id)
       .eq('role', 'admin')
       .maybeSingle();
 
-    // Allow access if admin OR super developer
-    if (!data && !superDevCheck) {
+    // Allow access if admin OR developer
+    if (!roleData && !isDeveloper && !isAdminRole) {
       navigate("/");
       return;
     }

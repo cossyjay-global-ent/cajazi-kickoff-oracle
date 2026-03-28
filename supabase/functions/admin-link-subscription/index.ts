@@ -56,10 +56,16 @@ serve(async (req) => {
 
     if (roleError) return json(500, { error: "Failed to verify admin role" });
 
-    // Check for super developer access
-    const isSuperDeveloper = user.email === "support@cosmas.dev";
+    // Check for developer role in profiles (no auth.users dependency)
+    const { data: profile } = await adminClient
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
 
-    if (!adminRole && !isSuperDeveloper) return json(403, { error: "Forbidden" });
+    const isDeveloper = profile?.role === "developer";
+
+    if (!adminRole && !isDeveloper) return json(403, { error: "Forbidden" });
 
     const body = (await req.json().catch(() => null)) as LinkBody | null;
     const subscriptionId = body?.subscription_id;
@@ -78,16 +84,15 @@ serve(async (req) => {
     if (subError || !sub) return json(404, { error: "Subscription not found" });
 
     // Ensure target user exists
-    const { data: profile, error: profileError } = await adminClient
+    const { data: targetProfile, error: profileError } = await adminClient
       .from("profiles")
       .select("id")
       .eq("id", targetUserId)
       .maybeSingle();
 
     if (profileError) return json(500, { error: "Failed to verify user" });
-    if (!profile) return json(404, { error: "User not found" });
+    if (!targetProfile) return json(404, { error: "User not found" });
 
-    // CRITICAL: linking must NOT change subscription status. Activation is separate.
     const { data: updated, error: updateError } = await adminClient
       .from("subscriptions")
       .update({
