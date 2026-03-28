@@ -306,6 +306,7 @@ export type Database = {
           id: string
           predictions_viewed: number | null
           rank_tier: string | null
+          role: string | null
           xp_points: number | null
         }
         Insert: {
@@ -317,6 +318,7 @@ export type Database = {
           id: string
           predictions_viewed?: number | null
           rank_tier?: string | null
+          role?: string | null
           xp_points?: number | null
         }
         Update: {
@@ -328,6 +330,7 @@ export type Database = {
           id?: string
           predictions_viewed?: number | null
           rank_tier?: string | null
+          role?: string | null
           xp_points?: number | null
         }
         Relationships: []
